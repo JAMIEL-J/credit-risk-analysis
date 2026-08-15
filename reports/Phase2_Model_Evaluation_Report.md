@@ -13,10 +13,10 @@
 
 | Model | ROC-AUC | Gini ($2 \cdot \text{AUC} - 1$) | KS Statistic (%) | PR-AUC | Log-Loss | Brier Score | Training Time (s) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Logistic Regression (Scorecard Baseline)** | 0.6809 | 0.3618 | 26.3% | 0.3601 | 0.5071 | 0.1668 | 2.56s |
-| **Random Forest (Bagging Ensemble)** | 0.6897 | 0.3793 | 27.74% | 0.3732 | 0.4948 | 0.1615 | 26.97s |
-| **LightGBM (Histogram Booster)** | 0.6893 | 0.3785 | 27.43% | 0.3719 | 0.4966 | 0.1628 | 4.99s |
-| **XGBoost (Hist Tree Ensemble)** | 0.6899 | 0.3798 | 27.41% | 0.373 | 0.4954 | 0.1622 | 9.49s |
+| **Logistic Regression (Scorecard Baseline)** | 0.6809 | 0.3618 | 26.3% | 0.3601 | 0.5071 | 0.1668 | 2.21s |
+| **Random Forest (Bagging Ensemble)** | 0.6883 | 0.3766 | 27.59% | 0.3692 | 0.4986 | 0.1629 | 40.78s |
+| **LightGBM (Histogram Booster)** | 0.6919 | 0.3839 | 27.9% | 0.3756 | 0.4959 | 0.1623 | 3.15s |
+| **XGBoost (Hist Tree Ensemble)** | 0.6917 | 0.3833 | 27.8% | 0.375 | 0.4967 | 0.1624 | 6.84s |
 
 ---
 

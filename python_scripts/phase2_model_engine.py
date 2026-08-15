@@ -139,13 +139,20 @@ def run_phase2_pipeline(
     results.append(res_lr)
     print(f"  -> LR Done in {t_lr:.2f}s | AUC: {res_lr['ROC-AUC']} | KS: {res_lr['KS Statistic (%)']}%")
 
-    # 5. Model 2: Random Forest (Optimized Bagging Ensemble)
+    # Define monotonic credit risk constraints:
+    # num_cols: fico_range_low (-1), dti (+1), annual_inc (-1), int_rate (+1), revol_util (+1), delinq_2yrs (+1), inq_last_6mths (+1), UNRATE (+1), FEDFUNDS (+1)
+    # One-hot encoded purpose features: 0 (unconstrained)
+    num_monotone = [-1, 1, -1, 1, 1, 1, 1, 1, 1]
+    cat_count = X_train_proc.shape[1] - len(num_monotone)
+    monotone_tuple = tuple(num_monotone + [0] * cat_count)
+
+    # 5. Model 2: Random Forest Classifier (Bagging Ensemble)
     print("\n[Step 5] Training Model 2: Random Forest Classifier...")
     t0 = time.time()
     rf = RandomForestClassifier(
         n_estimators=100,
-        max_depth=8,
-        max_samples=0.3,
+        max_depth=6,
+        max_features='sqrt',
         random_state=42,
         n_jobs=-1
     )
@@ -156,7 +163,7 @@ def run_phase2_pipeline(
     results.append(res_rf)
     print(f"  -> Random Forest Done in {t_rf:.2f}s | AUC: {res_rf['ROC-AUC']} | KS: {res_rf['KS Statistic (%)']}%")
 
-    # 6. Model 3: LightGBM Classifier (Histogram Gradient Boosting)
+    # 6. Model 3: LightGBM Classifier (Histogram Gradient Boosting with Monotonic Constraints)
     print("\n[Step 6] Training Model 3: LightGBM Classifier...")
     t0 = time.time()
     lgbm = lgb.LGBMClassifier(
@@ -166,6 +173,7 @@ def run_phase2_pipeline(
         max_depth=5,
         subsample=0.8,
         colsample_bytree=0.8,
+        monotone_constraints=list(monotone_tuple),
         random_state=42,
         n_jobs=-1,
         verbosity=-1
@@ -177,8 +185,8 @@ def run_phase2_pipeline(
     results.append(res_lgbm)
     print(f"  -> LightGBM Done in {t_lgbm:.2f}s | AUC: {res_lgbm['ROC-AUC']} | KS: {res_lgbm['KS Statistic (%)']}%")
 
-    # 7. Model 4: XGBoost Classifier (Histogram Tree Method)
-    print("\n[Step 7] Training Model 4: XGBoost Classifier (Hist Tree Method)...")
+    # 7. Model 4: XGBoost Classifier (Hist Tree Method with Monotonic Constraints)
+    print("\n[Step 7] Training Model 4: XGBoost Classifier (Hist Tree Ensemble with Monotonic Constraints)...")
     t0 = time.time()
     xgb_clf = xgb.XGBClassifier(
         tree_method='hist',
@@ -187,6 +195,7 @@ def run_phase2_pipeline(
         max_depth=5,
         subsample=0.8,
         colsample_bytree=0.8,
+        monotone_constraints=monotone_tuple,
         eval_metric='logloss',
         random_state=42,
         n_jobs=-1
