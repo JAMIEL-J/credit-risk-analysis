@@ -105,8 +105,8 @@ Models were validated on the **518,706 Out-of-Time test cohort** (2016–2018 vi
 ### 1. Installation & Environment Setup
 Clone the repository and install the dependencies:
 ```bash
-git clone https://github.com/YOUR_USERNAME/credit-risk-stress-testing.git
-cd credit-risk-stress-testing
+git clone https://github.com/JAMIEL-J/credit-risk-analysis.git
+cd credit-risk-analysis
 pip install -r requirements.txt
 ```
 
