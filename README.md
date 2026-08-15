@@ -67,9 +67,9 @@ Models were validated on the **518,706 Out-of-Time test cohort** (2016–2018 vi
 
 | Rank | Model Architecture | ROC-AUC | Gini ($2 \cdot \text{AUC} - 1$) | KS Statistic (%) | PR-AUC | Log-Loss | Brier Score | Training Time |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 🥇 | **LightGBM (Histogram Booster)** | **0.6919** | **0.3839** | **27.90%** | **0.3756** | **0.4959** | **0.1623** | **3.15s** |
-| 🥈 | **XGBoost (Hist Tree Ensemble)** | **0.6917** | **0.3833** | **27.80%** | **0.3750** | **0.4967** | **0.1624** | **6.84s** |
-| 🥉 | **Random Forest (Bagging Ensemble)** | 0.6883 | 0.3766 | 27.59% | 0.3692 | 0.4986 | 0.1629 | 40.78s |
+| 🏆 1 | **XGBoost (Hist Tree Ensemble - Champion)** | **0.6917** | **0.3833** | **27.80%** | **0.3750** | **0.4967** | **0.1624** | **6.84s** |
+| 🥈 2 | **LightGBM (Histogram Booster - Challenger)** | **0.6919** | **0.3839** | **27.90%** | **0.3756** | **0.4959** | **0.1623** | **3.15s** |
+| 🥉 3 | **Random Forest (Bagging Ensemble)** | 0.6883 | 0.3766 | 27.59% | 0.3692 | 0.4986 | 0.1629 | 40.78s |
 | 4 | **Logistic Regression (Scorecard Baseline)** | 0.6809 | 0.3618 | 26.30% | 0.3601 | 0.5071 | 0.1668 | **2.21s** |
 
 ---

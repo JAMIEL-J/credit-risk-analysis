@@ -240,7 +240,7 @@ with st.sidebar:
     st.markdown(f"• **Active Loans:** `{len(df_loans):,}`<br>• **Gross Balance:** `${df_loans['loan_amnt'].sum()/1e9:.2f}B`<br>• **Annual Revenue:** `${df_loans['expected_revenue'].sum()/1e9:.2f}B`<br>• **Base ECL Reserve:** `${df_loans['ecl_base'].sum()/1e6:.1f}M`<br>• **Base Net Profit:** `${df_loans['net_profit_base'].sum()/1e6:.1f}M`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🤖 Trained Model Suite")
-    st.markdown("• 🥇 **LightGBM:** `AUC 0.692 | KS 27.9%`<br>• 🥈 **XGBoost (Hist):** `AUC 0.692 | KS 27.8%`<br>• 🥉 **Random Forest:** `AUC 0.688 | KS 27.6%`<br>• 📋 **Logistic Reg:** `AUC 0.681 | KS 26.3%`", unsafe_allow_html=True)
+    st.markdown("• 🥇 **XGBoost (Champion):** `AUC 0.692 | KS 27.8%`<br>• 🥈 **LightGBM (Challenger):** `AUC 0.692 | KS 27.9%`<br>• 🥉 **Random Forest:** `AUC 0.688 | KS 27.6%`<br>• 📋 **Logistic Reg:** `AUC 0.681 | KS 26.3%`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🏛️ Standards Compliance")
     st.markdown("• **Risk-Adjusted Return:** Net Profit Optimization<br>• **IFRS 9 / CECL:** Forward-looking ECL<br>• **Basel III/IV:** Capital Adequacy", unsafe_allow_html=True)
@@ -504,8 +504,8 @@ with tab_ml:
     ])
 
     benchmark_dict = {
-        "LightGBM (Histogram Booster)": {"AUC": 0.6919, "Gini": 0.3839, "KS": 27.90, "PR_AUC": 0.3756, "LogLoss": 0.4959, "Brier": 0.1623, "Time": 3.15, "Desc": "Leaf-wise gradient boosting with ultra-fast inference and monotonic credit risk calibration."},
-        "XGBoost (Hist Tree Ensemble)": {"AUC": 0.6917, "Gini": 0.3833, "KS": 27.80, "PR_AUC": 0.3750, "LogLoss": 0.4967, "Brier": 0.1624, "Time": 6.84, "Desc": "Depth-wise histogram gradient boosting with monotonic constraints on macroeconomic indicators."},
+        "XGBoost (Hist Tree Ensemble - Champion)": {"AUC": 0.6917, "Gini": 0.3833, "KS": 27.80, "PR_AUC": 0.3750, "LogLoss": 0.4967, "Brier": 0.1624, "Time": 6.84, "Desc": "Depth-wise histogram gradient boosting with monotonic constraints on macroeconomic indicators (Production Champion)."},
+        "LightGBM (Histogram Booster - Challenger)": {"AUC": 0.6919, "Gini": 0.3839, "KS": 27.90, "PR_AUC": 0.3756, "LogLoss": 0.4959, "Brier": 0.1623, "Time": 3.15, "Desc": "Leaf-wise gradient boosting with ultra-fast inference and monotonic credit risk calibration."},
         "Random Forest (Bagging Ensemble)": {"AUC": 0.6883, "Gini": 0.3766, "KS": 27.59, "PR_AUC": 0.3692, "LogLoss": 0.4986, "Brier": 0.1629, "Time": 40.78, "Desc": "Bootstrap aggregating ensemble of 100 decorrelated decision trees with high KS separation."},
         "Logistic Regression (Scorecard Baseline)": {"AUC": 0.6809, "Gini": 0.3618, "KS": 26.30, "PR_AUC": 0.3601, "LogLoss": 0.5071, "Brier": 0.1668, "Time": 2.21, "Desc": "Standard regulatory linear log-odds scorecard benchmark with monotonic credit weights."}
     }
@@ -513,8 +513,8 @@ with tab_ml:
     with bench_subtab1:
         st.markdown("#### Out-of-Time (OOT) Test Cohort Performance (518,706 Loans)")
         leaderboard_df = pd.DataFrame([
-            {"Rank": "🏆 1", "Model Architecture": "LightGBM (Histogram Booster)", "ROC-AUC": 0.6919, "Gini Coeff": 0.3839, "KS Stat (%)": "27.90%", "PR-AUC": 0.3756, "Log-Loss": 0.4959, "Brier Score": 0.1623, "Train Latency": "3.15s"},
-            {"Rank": "🥈 2", "Model Architecture": "XGBoost (Hist Tree Ensemble)", "ROC-AUC": 0.6917, "Gini Coeff": 0.3833, "KS Stat (%)": "27.80%", "PR-AUC": 0.3750, "Log-Loss": 0.4967, "Brier Score": 0.1624, "Train Latency": "6.84s"},
+            {"Rank": "🏆 1 (Champion)", "Model Architecture": "XGBoost (Hist Tree Ensemble)", "ROC-AUC": 0.6917, "Gini Coeff": 0.3833, "KS Stat (%)": "27.80%", "PR-AUC": 0.3750, "Log-Loss": 0.4967, "Brier Score": 0.1624, "Train Latency": "6.84s"},
+            {"Rank": "🥈 2 (Challenger)", "Model Architecture": "LightGBM (Histogram Booster)", "ROC-AUC": 0.6919, "Gini Coeff": 0.3839, "KS Stat (%)": "27.90%", "PR-AUC": 0.3756, "Log-Loss": 0.4959, "Brier Score": 0.1623, "Train Latency": "3.15s"},
             {"Rank": "🥉 3", "Model Architecture": "Random Forest (Bagging Ensemble)", "ROC-AUC": 0.6883, "Gini Coeff": 0.3766, "KS Stat (%)": "27.59%", "PR-AUC": 0.3692, "Log-Loss": 0.4986, "Brier Score": 0.1629, "Train Latency": "40.78s"},
             {"Rank": "4", "Model Architecture": "Logistic Regression (Scorecard)", "ROC-AUC": 0.6809, "Gini Coeff": 0.3618, "KS Stat (%)": "26.30%", "PR-AUC": 0.3601, "Log-Loss": 0.5071, "Brier Score": 0.1668, "Train Latency": "2.21s"}
         ])
@@ -524,8 +524,8 @@ with tab_ml:
         with row_c1:
             fpr_pts = np.linspace(0, 1, 100)
             fig_roc = go.Figure()
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.548, mode='lines', name="LightGBM (AUC = 0.6919)", line=dict(color='#10B981', width=2.5)))
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.550, mode='lines', name="XGBoost (AUC = 0.6917)", line=dict(color='#2563EB', width=2)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.550, mode='lines', name="XGBoost Champion (AUC = 0.6917)", line=dict(color='#2563EB', width=2.5)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.548, mode='lines', name="LightGBM Challenger (AUC = 0.6919)", line=dict(color='#10B981', width=2)))
             fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.556, mode='lines', name="Random Forest (AUC = 0.6883)", line=dict(color='#8B5CF6', width=2)))
             fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.575, mode='lines', name="Logistic Reg (AUC = 0.6809)", line=dict(color='#F59E0B', width=2)))
             fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines', name="Random Chance (0.50)", line=dict(color='#94A3B8', dash='dash')))
