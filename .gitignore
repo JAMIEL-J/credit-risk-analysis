@@ -22,3 +22,7 @@ accepted_2007_to_2018Q4.csv
 # System / OS Files
 .DS_Store
 Thumbs.db
+
+# Root-level Phase files (Kept local, centralized in reports/)
+/Phase*.md
+/Phases.*
