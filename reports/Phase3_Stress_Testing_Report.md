@@ -5,8 +5,8 @@
 **Isolated Portfolio:** 518,706 loans (2016–2018 vintage cohort)  
 **Total Portfolio Balance:** $7,499,413,504.00  
 **Stressed Export Files:**  
-- `data/stressed_portfolio_phase3.csv` (55.64 MB)  
-- `data/stressed_portfolio_phase3.parquet` (12.14 MB)  
+- `data/stressed_portfolio_phase3.csv` (55.63 MB)  
+- `data/stressed_portfolio_phase3.parquet` (12.19 MB)  
 
 ---
 
@@ -26,16 +26,16 @@ Under standard supervisory stress testing guidelines (e.g. Federal Reserve CCAR 
 
 | Scenario | Mean PD | Median PD | 25th Percentile | 75th Percentile | 95th Percentile | Absolute Delta | Relative Shift |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Baseline** | **22.50%** | 18.86% | 10.62% | 30.40% | 54.91% | — | — |
-| **Adverse** | **23.69%** | 20.02% | 11.57% | 31.87% | 56.59% | +1.19% | +5.30% |
-| **Severe** | **25.21%** | 21.36% | 12.30% | 34.15% | 59.64% | +2.71% | +12.03% |
+| **Baseline** | **23.18%** | 19.36% | 11.59% | 31.32% | 55.33% | — | — |
+| **Adverse** | **23.53%** | 19.71% | 11.88% | 31.76% | 55.79% | +0.35% | +1.51% |
+| **Severe** | **24.14%** | 20.30% | 12.18% | 32.69% | 56.96% | +0.96% | +4.14% |
 
 ---
 
 ## 3. Risk Sensitivity Takeaways
-* **Adverse Macro Sensitivity:** A $+1.5\%$ rise in unemployment combined with a $+0.5\%$ interest rate increase increases the mean default probability from **22.50%** to **23.69%**.
-* **Severe Macro Sensitivity:** Under deep recession conditions ($+3.5\%$ unemployment shock), mean default probability reaches **25.21%**.
-* **Tail Risk Concentration:** The 95th percentile borrower PD rises to **59.64%** in the severe scenario.
+* **Adverse Macro Sensitivity:** A $+1.5\%$ rise in unemployment combined with a $+0.5\%$ interest rate increase increases the mean default probability from **23.18%** to **23.53%**.
+* **Severe Macro Sensitivity:** Under deep recession conditions ($+3.5\%$ unemployment shock), mean default probability reaches **24.14%**.
+* **Tail Risk Concentration:** The 95th percentile borrower PD rises to **56.96%** in the severe scenario.
 
 ---
 

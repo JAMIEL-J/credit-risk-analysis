@@ -224,17 +224,17 @@ def run_phase2_pipeline(
         'Random Forest (Bagging Ensemble)': Pipeline([('preprocessor', preprocessor), ('model', rf)])
     }
     
-    # Save bundle and individual champion
+    # Save bundle and individual champion (Deploying LightGBM as Champion)
     joblib.dump(all_pipelines, "models/all_models.joblib")
-    joblib.dump(all_pipelines['XGBoost (Hist Tree Ensemble)'], model_save_path)
+    joblib.dump(all_pipelines['LightGBM (Histogram Booster)'], model_save_path)
     print(f"\n[Step 9] All 4 Model Pipelines serialized to: models/all_models.joblib")
-    print(f"  -> Champion Pipeline saved to: {model_save_path}")
+    print(f"  -> Champion Pipeline (LightGBM) saved to: {model_save_path}")
 
-    # Attach baseline PD
+    # Attach baseline PD from Champion (LightGBM)
     df_test_portfolio = df.loc[test_mask].copy()
-    df_test_portfolio['PD_base'] = y_prob_xgb.astype(np.float32)
+    df_test_portfolio['PD_base'] = y_prob_lgbm.astype(np.float32)
     df_test_portfolio.to_parquet(test_portfolio_output_path, index=False)
-    print(f"Test Portfolio ({len(df_test_portfolio):,} loans) with PD_base saved to: {test_portfolio_output_path}")
+    print(f"Test Portfolio ({len(df_test_portfolio):,} loans) with LightGBM PD_base saved to: {test_portfolio_output_path}")
 
     # 10. Generate Markdown Evaluation Report
     md_content = f"""# Phase 2: 4-Model Credit Risk Benchmark & ML Engine Report
