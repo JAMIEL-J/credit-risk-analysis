@@ -613,9 +613,9 @@ with tab_ml:
 
         pred_cols = st.columns(4)
         model_keys = [
-            ("XGBoost (Hist Tree)", "XGBoost (Hist Tree Ensemble)", "#2563EB"),
+            ("LightGBM (Champion)", "LightGBM (Histogram Booster)", "#10B981"),
+            ("XGBoost (Challenger)", "XGBoost (Hist Tree Ensemble)", "#2563EB"),
             ("Random Forest", "Random Forest (Bagging Ensemble)", "#8B5CF6"),
-            ("LightGBM (Booster)", "LightGBM (Histogram Booster)", "#10B981"),
             ("Logistic Reg (Scorecard)", "Logistic Regression (Scorecard Baseline)", "#F59E0B")
         ]
 
