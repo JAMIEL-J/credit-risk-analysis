@@ -273,7 +273,7 @@ with tab_dash:
     
     with slicer_col3:
         all_purposes = sorted(df_loans['purpose'].unique().tolist())
-        selected_purposes = st.multiselect("Loan Purpose:", all_purposes, default=all_purposes[:4])
+        selected_purposes = st.multiselect("Loan Purpose:", all_purposes, default=all_purposes)
         
     with slicer_col4:
         all_ficos = ['< 660 (Subprime)', '660 - 699 (Fair)', '700 - 749 (Good)', '750 - 799 (Very Good)', '800+ (Exceptional)']
