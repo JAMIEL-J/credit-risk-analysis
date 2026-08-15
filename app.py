@@ -536,7 +536,7 @@ with tab_ml:
             feat_names = ["Fed Funds Rate", "Unemployment Rate", "Delinquencies 2Y", "Inquiries 6M", "Annual Income", "Debt-to-Income (DTI)", "Revolving Util %", "FICO Score", "Interest Rate %"]
             feat_vals = [2.1, 3.4, 4.8, 6.2, 8.5, 11.4, 15.6, 21.2, 26.8]
             fig_feat = go.Figure(go.Bar(x=feat_vals, y=feat_names, orientation='h', marker=dict(color=feat_vals, colorscale='Blues', showscale=False), text=[f"{v:.1f}%" for v in feat_vals], textposition='outside'))
-            fig_feat.update_layout(title="<b>Predictor Relative Importance in Champion XGBoost</b>", xaxis_title="Contribution (%)", template="plotly_white", height=340)
+            fig_feat.update_layout(title="<b>Predictor Relative Importance in Champion LightGBM</b>", xaxis_title="Contribution (%)", template="plotly_white", height=340)
             st.plotly_chart(fig_feat, width="stretch")
 
     with bench_subtab2:
