@@ -90,74 +90,62 @@ Models were evaluated strictly on the **517,807 Out-of-Time test cohort** (2016�
 
 ---
 
-## 🖥️ Streamlit Web Dashboard & Features
+## 📖 How to Use This Repository
 
-The dashboard ([`app.py`](file:///J:/Finance%20Projects/Credit/app.py)) is organized into 5 top-level tabs:
-
-1. **🏛️ The Deliverable: Portfolio Dashboard:**
-   * **Multi-Dimensional Slicers:** Instant cross-filtering across Scenario Views (Baseline, Adverse, Severe), Vintage Years, Loan Purpose, FICO Tiers, and DTI Bands.
-   * **Top KPI Metric Cards:** Live Exposure ($B), Baseline ECL ($M), Active Scenario ECL, Stress Gap, and Average Model PD.
-   * **FICO $\times$ DTI Heatmap Matrix:** Red-gradient matrix with formatted dollar values.
-   * **Purpose & FICO Donut Breakdown:** Exposure share and loss distributions.
-2. **🧭 End-to-End Workflow & Architecture:**
-   * Documentation of all 5 project phases with formulas and methodology.
-3. **🤖 4-Model ML Benchmark & Underwriter:**
-   * **Model Leaderboard:** Full metrics comparison table and ROC curves.
-   * **Head-to-Head Comparator:** Select Model A vs. Model B to compare performance deltas.
-   * **Live Single-Loan Underwriter Simulator:** Move applicant sliders (FICO, DTI, Purpose, Principal, Unemployment, Fed Funds) to run live inference concurrently across all 4 models!
-4. **📈 FRED Macroeconomic Deep-Dive:**
-   * Interactive dual-axis time series chart (`UNRATE` vs. `FEDFUNDS`).
-5. **🛡️ Interactive Policy Cutoff Simulator:**
-   * Continuous sliders & categorical risk tiers with live loss savings calculations.
-
----
-
-## 📊 Universal BI Data Export Layer ([`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/))
-
-For enterprise reporting in **Power BI**, **Tableau**, or **Looker Studio**, clean pre-aggregated CSVs are provided:
-* 📊 **[`ecl_risk_matrix_fico_dti.csv`](file:///J:/Finance%20Projects/Credit/power_bi_exports/ecl_risk_matrix_fico_dti.csv):** Aggregated FICO $\times$ DTI risk matrix for matrix heatmaps.
-* 📊 **[`ecl_summary_by_purpose.csv`](file:///J:/Finance%20Projects/Credit/power_bi_exports/ecl_summary_by_purpose.csv):** Purpose-level loan balance, default rates, and expected losses.
-* 📊 **[`stressed_portfolio_phase3.csv`](file:///J:/Finance%20Projects/Credit/power_bi_exports/stressed_portfolio_phase3.csv):** 517k loan-level records with Baseline, Adverse, and Severe default probabilities and credit losses.
-
----
-
-## 🚀 Quickstart & How to Run
-
-### 1. Clone & Install Dependencies
+### 1. Installation & Environment Setup
+Clone the repository and install the dependencies:
 ```bash
 git clone https://github.com/YOUR_USERNAME/credit-risk-stress-testing.git
 cd credit-risk-stress-testing
 pip install -r requirements.txt
 ```
 
-### 2. Launch the Streamlit Dashboard
+### 2. Launching the Interactive Web Dashboard
+Run the Streamlit application:
 ```bash
 streamlit run app.py
 ```
-* Access locally at: **`http://localhost:8502`** (or `http://localhost:8501`).
+Open your browser and navigate to: **`http://localhost:8502`** (or `http://localhost:8501`).
 
 ---
 
-## 📤 Preparing & Pushing to GitHub
+### 3. Navigating the Web Dashboard
 
-Follow these steps to push the project to your GitHub repository:
+| Dashboard Tab | What You Can Do |
+| :--- | :--- |
+| **🏛️ The Deliverable: Portfolio Dashboard** | • Filter by **Scenario** (*Baseline / Adverse / Severe*), **Vintage Year**, **Loan Purpose**, **FICO Tier**, and **DTI Band**.<br>• View live **KPI Metric Cards** ($ Exposure, ECL, Stress Gap, Average Model PD).<br>• Inspect the **FICO $\times$ DTI Heatmap Matrix** with cell-level loss numbers. |
+| **🧭 End-to-End Workflow & Architecture** | • Review the technical execution narrative, regulatory formulas, and methodologies across all 5 project phases. |
+| **🤖 4-Model ML Benchmark & Underwriter** | • **Tab 1 (Leaderboard):** Compare ROC-AUC, Gini, and KS separation power.<br>• **Tab 2 (Comparator):** Select any Model A vs. Model B to see side-by-side metric deltas.<br>• **Tab 3 (Live Underwriter):** Move applicant sliders (FICO, DTI, Purpose, Principal, Unemployment, Fed Rate) to execute **real-time concurrent inference across all 4 models**! |
+| **📈 FRED Macroeconomic Deep-Dive** | • Explore dual-axis interactive time-series plots comparing Unemployment (`UNRATE`) and Interest Rates (`FEDFUNDS`). |
+| **🛡️ Interactive Policy Cutoff Simulator** | • Adjust FICO and DTI cutoff sliders to simulate underwriting rules and calculate exact dollar loss savings. |
 
+---
+
+### 4. Using the Standalone BI Exports (Power BI / Tableau)
+To build custom dashboards in **Power BI**, **Tableau**, or **Looker Studio**, import the pre-aggregated and clean CSV files located in [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/):
+* 📊 **`power_bi_exports/ecl_risk_matrix_fico_dti.csv`:** Pre-grouped matrix table for building FICO $\times$ DTI heatmaps.
+* 📊 **`power_bi_exports/ecl_summary_by_purpose.csv`:** Loan volume, default rate, and ECL summaries by loan purpose.
+* 📊 **`power_bi_exports/stressed_portfolio_phase3.csv`:** Complete 517k loan records with baseline, adverse, and severe default probabilities and losses.
+
+---
+
+### 5. Running the Offline Pipeline Scripts (Optional)
+If you want to re-execute any individual phase pipeline from scratch:
 ```bash
-# 1. Initialize Git repository (if not already done)
-git init
+# Phase 1: Ingestion & FRED Macro Integration
+python python_scripts/phase1_data_engineering.py
 
-# 2. Stage all files (the .gitignore automatically ignores large raw CSVs > 100MB)
-git add .
+# Phase 2: Train & Benchmark 4 ML Models
+python python_scripts/phase2_model_engine.py
 
-# 3. Commit your changes
-git commit -m "feat: complete credit risk stress testing engine with streamlit dashboard and BI exports"
+# Phase 3: Macro Stress Testing Simulation
+python python_scripts/phase3_stress_testing.py
 
-# 4. Link to your GitHub remote repository
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+# Phase 4: Financial Math & DuckDB SQL Loss Calculation
+python python_scripts/phase4_financial_math_sql.py
 
-# 5. Push to GitHub
-git push -u origin main
+# Export Power BI CSV Deliverables
+python python_scripts/export_power_bi_files.py
 ```
 
 ---
