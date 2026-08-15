@@ -38,7 +38,18 @@ def run_phase3_pipeline(
 
     # 2. Base Scenario PD
     print("\n[Step 2] Calculating Baseline PD (PD_base)...")
-    features = ['fico_range_low', 'dti', 'purpose', 'UNRATE', 'FEDFUNDS']
+    features = [
+        'fico_range_low', 
+        'dti', 
+        'annual_inc', 
+        'int_rate', 
+        'revol_util', 
+        'delinq_2yrs', 
+        'inq_last_6mths', 
+        'purpose', 
+        'UNRATE', 
+        'FEDFUNDS'
+    ]
     X_base = df_portfolio[features].copy()
     
     t0 = time.time()
@@ -70,8 +81,13 @@ def run_phase3_pipeline(
     sql_cols = [
         'Year_Month', 
         'loan_amnt', 
+        'int_rate',
+        'annual_inc',
         'fico_range_low', 
         'dti', 
+        'revol_util',
+        'delinq_2yrs',
+        'inq_last_6mths',
         'purpose', 
         'UNRATE', 
         'FEDFUNDS', 

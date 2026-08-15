@@ -2,8 +2,8 @@
 
 **Execution Status:** Completed Successfully  
 **Validation Strategy:** Out-of-Time (OOT) Chronological Validation  
-**Train Window:** 2007-06 to 2015-12 (826,594 loans, 18.43% default rate)  
-**OOT Test Window:** 2016-01 to 2018-12 (517,807 loans, 22.41% default rate)  
+**Train Window:** 2007-06 to 2015-12 (826,604 loans, 18.43% default rate)  
+**OOT Test Window:** 2016-01 to 2018-12 (518,706 loans, 22.41% default rate)  
 **Champion Model Artifact:** `models/champion_pd_model.joblib`  
 **Test Portfolio Output:** `data/test_portfolio_with_pd.parquet`  
 
@@ -13,10 +13,10 @@
 
 | Model | ROC-AUC | Gini ($2 \cdot \text{AUC} - 1$) | KS Statistic (%) | PR-AUC | Log-Loss | Brier Score | Training Time (s) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Logistic Regression (Scorecard Baseline)** | 0.625 | 0.25 | 17.96% | 0.3067 | 0.5168 | 0.1687 | 4.27s |
-| **Random Forest (Bagging Ensemble)** | 0.624 | 0.248 | 17.51% | 0.3101 | 0.5167 | 0.1688 | 26.49s |
-| **LightGBM (Histogram Booster)** | 0.6264 | 0.2527 | 17.92% | 0.31 | 0.5156 | 0.1683 | 3.58s |
-| **XGBoost (Hist Tree Ensemble)** | 0.6265 | 0.2531 | 18.03% | 0.3105 | 0.5151 | 0.1681 | 6.47s |
+| **Logistic Regression (Scorecard Baseline)** | 0.6809 | 0.3618 | 26.3% | 0.3601 | 0.5071 | 0.1668 | 2.56s |
+| **Random Forest (Bagging Ensemble)** | 0.6897 | 0.3793 | 27.74% | 0.3732 | 0.4948 | 0.1615 | 26.97s |
+| **LightGBM (Histogram Booster)** | 0.6893 | 0.3785 | 27.43% | 0.3719 | 0.4966 | 0.1628 | 4.99s |
+| **XGBoost (Hist Tree Ensemble)** | 0.6899 | 0.3798 | 27.41% | 0.373 | 0.4954 | 0.1622 | 9.49s |
 
 ---
 

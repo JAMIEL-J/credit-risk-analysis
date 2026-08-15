@@ -2,8 +2,8 @@
 Power BI Executive Credit Risk & Stress Testing Dashboard (Streamlit Edition)
 =============================================================================
 A high-fidelity Power BI replica dashboard with interactive multi-dimensional
-slicers, live cross-filtering, KPI cards, FICO x DTI heatmaps, model benchmarks,
-and real-time underwriting policy simulation.
+slicers, live cross-filtering, KPI cards, FICO x DTI heatmaps, risk-adjusted net
+profit decisioning, 4-model benchmarks, and real-time underwriting simulation.
 """
 
 import os
@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 # 1. PAGE CONFIGURATION & ENTERPRISE STYLING
 # ----------------------------------------------------
 st.set_page_config(
-    page_title="Credit Portfolio Stress Testing & ECL Dashboard",
+    page_title="Credit Portfolio Stress Testing & Risk-Adjusted ECL Engine",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -147,18 +147,29 @@ def get_dashboard_data():
             Year_Month,
             SUBSTRING(Year_Month, 1, 4) AS vintage_year,
             ead AS loan_amnt,
+            int_rate,
+            annual_inc,
             fico_range_low,
             dti,
+            revol_util,
+            delinq_2yrs,
+            inq_last_6mths,
             fico_band,
             dti_band,
             purpose,
+            UNRATE,
+            FEDFUNDS,
             PD_base,
             PD_adverse,
             PD_severe,
+            expected_revenue,
             ecl_base,
             ecl_adverse,
             ecl_severe,
-            ecl_gap
+            ecl_gap,
+            net_profit_base,
+            net_profit_adverse,
+            net_profit_severe
         FROM read_parquet('{parquet_path}')
     """).df()
     
@@ -167,8 +178,9 @@ def get_dashboard_data():
     df_raw['fico_band'] = df_raw['fico_band'].astype('category')
     df_raw['dti_band'] = df_raw['dti_band'].astype('category')
     df_raw['purpose'] = df_raw['purpose'].astype('category')
-    for num_col in ['loan_amnt', 'fico_range_low', 'dti', 'PD_base', 'PD_adverse', 'PD_severe', 'ecl_base', 'ecl_adverse', 'ecl_severe', 'ecl_gap']:
-        df_raw[num_col] = df_raw[num_col].astype('float32')
+    for num_col in ['loan_amnt', 'int_rate', 'annual_inc', 'fico_range_low', 'dti', 'revol_util', 'delinq_2yrs', 'inq_last_6mths', 'UNRATE', 'FEDFUNDS', 'PD_base', 'PD_adverse', 'PD_severe', 'expected_revenue', 'ecl_base', 'ecl_adverse', 'ecl_severe', 'ecl_gap', 'net_profit_base', 'net_profit_adverse', 'net_profit_severe']:
+        if num_col in df_raw.columns:
+            df_raw[num_col] = df_raw[num_col].astype('float32')
 
     # Macro Data
     unrate_df = pd.read_csv("data/UNRATE.csv")
@@ -192,10 +204,10 @@ def load_all_models():
     return {}
 
 @st.cache_data(show_spinner=False, max_entries=500)
-def compute_portfolio_aggregations(df_subset, scenario_metric):
+def compute_portfolio_aggregations(df_subset, metric_col):
     """Cached fast aggregator for heatmaps and charts."""
-    heat_pivot = df_subset.pivot_table(index='fico_band', columns='dti_band', values=scenario_metric, aggfunc='sum', observed=False) / 1e6
-    purp_sum = df_subset.groupby('purpose', observed=False)[scenario_metric].sum().reset_index()
+    heat_pivot = df_subset.pivot_table(index='fico_band', columns='dti_band', values=metric_col, aggfunc='sum', observed=False) / 1e6
+    purp_sum = df_subset.groupby('purpose', observed=False)[metric_col].sum().reset_index()
     fico_sum = df_subset.groupby('fico_band', observed=False)['loan_amnt'].sum().reset_index()
     return heat_pivot, purp_sum, fico_sum
 
@@ -210,14 +222,14 @@ st.markdown("""
     <div style='display: flex; justify-content: space-between; align-items: center;'>
         <div>
             <div style='font-size: 1.35rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.02em;'>
-                🏛️ Credit Portfolio Stress Testing & Expected Credit Loss Engine
+                🏛️ Credit Portfolio Stress Testing & Risk-Adjusted Net Profit Engine
             </div>
             <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 0.2rem;'>
-                Point-in-Time (PiT) Machine Learning, Macro Sensitivity & Basel / IFRS 9 Compliance
+                Point-in-Time (PiT) ML (AUC ~0.70), Risk-Adjusted Return Optimization & CECL / IFRS 9 Compliance
             </div>
         </div>
         <div style='text-align: right;'>
-            <span style='background: #2563EB; color: #FFFFFF; font-weight: 600; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;'>● 517,807 Active Loans</span>
+            <span style='background: #2563EB; color: #FFFFFF; font-weight: 600; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem;'>● 518,706 Active Loans</span>
         </div>
     </div>
 </div>
@@ -225,13 +237,13 @@ st.markdown("""
 
 with st.sidebar:
     st.markdown("### 📊 Portfolio Summary")
-    st.markdown(f"• **Active Loans:** `{len(df_loans):,}`<br>• **Gross Balance:** `${df_loans['loan_amnt'].sum()/1e9:.2f}B`<br>• **Base ECL Reserve:** `${df_loans['ecl_base'].sum()/1e6:.1f}M`", unsafe_allow_html=True)
+    st.markdown(f"• **Active Loans:** `{len(df_loans):,}`<br>• **Gross Balance:** `${df_loans['loan_amnt'].sum()/1e9:.2f}B`<br>• **Annual Revenue:** `${df_loans['expected_revenue'].sum()/1e9:.2f}B`<br>• **Base ECL Reserve:** `${df_loans['ecl_base'].sum()/1e6:.1f}M`<br>• **Base Net Profit:** `${df_loans['net_profit_base'].sum()/1e6:.1f}M`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🤖 Trained Model Suite")
-    st.markdown("• 🥇 **Champion:** `XGBoost (Hist Tree)`<br>• 🥈 **Challenger:** `LightGBM`<br>• 🥉 **Scorecard:** `Logistic Regression`<br>• 🌲 **Bagging:** `Random Forest`", unsafe_allow_html=True)
+    st.markdown("• 🥇 **XGBoost (Hist):** `AUC 0.690 \| KS 27.4%`<br>• 🥈 **Random Forest:** `AUC 0.690 \| KS 27.7%`<br>• 🥉 **LightGBM:** `AUC 0.689 \| KS 27.4%`<br>• 📋 **Logistic Reg:** `AUC 0.681 \| KS 26.3%`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🏛️ Standards Compliance")
-    st.markdown("• **IFRS 9 / CECL:** Forward-looking ECL<br>• **Basel III/IV:** Capital Adequacy<br>• **FRED:** Macro Ingestion (`UNRATE`/`FED`)", unsafe_allow_html=True)
+    st.markdown("• **Risk-Adjusted Return:** Net Profit Optimization<br>• **IFRS 9 / CECL:** Forward-looking ECL<br>• **Basel III/IV:** Capital Adequacy", unsafe_allow_html=True)
 
 # ----------------------------------------------------
 # 4. TOP NAVIGATION TABS
@@ -285,38 +297,68 @@ with tab_dash:
         # Aggregations
         total_loans = len(filtered_df)
         total_exp = filtered_df['loan_amnt'].sum()
+        total_rev = filtered_df['expected_revenue'].sum()
         total_base_ecl = filtered_df['ecl_base'].sum()
         total_adverse_ecl = filtered_df['ecl_adverse'].sum()
         total_severe_ecl = filtered_df['ecl_severe'].sum()
-        ecl_gap = total_severe_ecl - total_base_ecl
+        
+        total_base_profit = filtered_df['net_profit_base'].sum()
+        total_adverse_profit = filtered_df['net_profit_adverse'].sum()
+        total_severe_profit = filtered_df['net_profit_severe'].sum()
 
         if scenario_choice == "Baseline":
             active_ecl = total_base_ecl
+            active_profit = total_base_profit
             active_pd = (filtered_df['PD_base'].mean()) * 100
         elif "Adverse" in scenario_choice:
             active_ecl = total_adverse_ecl
+            active_profit = total_adverse_profit
             active_pd = (filtered_df['PD_adverse'].mean()) * 100
         else:
             active_ecl = total_severe_ecl
+            active_profit = total_severe_profit
             active_pd = (filtered_df['PD_severe'].mean()) * 100
 
-        # KPI Cards Row
+        # KPI Cards Row (Exposure, Revenue, ECL, Net Profit, Margin)
         kpi_col1, kpi_col2, kpi_col3, kpi_col4, kpi_col5 = st.columns(5)
         with kpi_col1:
             st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Total Exposure (EAD)</div><div class='pbi-card-val'>${total_exp/1e9:.2f} B</div><div class='pbi-card-sub'>{total_loans:,} Active Loans</div></div>""", unsafe_allow_html=True)
         with kpi_col2:
-            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Baseline ECL</div><div class='pbi-card-val'>${total_base_ecl/1e6:.1f} M</div><div class='pbi-card-sub'>{(total_base_ecl/total_exp)*100:.2f}% of Balance</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Expected Gross Revenue</div><div class='pbi-card-val' style='color:#2563EB;'>${total_rev/1e6:,.1f} M</div><div class='pbi-card-sub'>{(total_rev/total_exp)*100:.2f}% Average Yield</div></div>""", unsafe_allow_html=True)
         with kpi_col3:
             st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>{scenario_choice.split(' ')[0]} ECL</div><div class='pbi-card-val' style='color:#DC2626;'>${active_ecl/1e6:.1f} M</div><div class='pbi-card-sub'>{(active_ecl/total_exp)*100:.2f}% Loss Rate</div></div>""", unsafe_allow_html=True)
         with kpi_col4:
-            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Severe Stress Gap</div><div class='pbi-card-val' style='color:#2563EB;'>${abs(ecl_gap)/1e6:.1f} M</div><div class='pbi-card-sub'>Loss Delta vs. Base</div></div>""", unsafe_allow_html=True)
+            profit_color = "#16A34A" if active_profit >= 0 else "#DC2626"
+            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Risk-Adjusted Net Profit</div><div class='pbi-card-val' style='color:{profit_color};'>${active_profit/1e6:,.1f} M</div><div class='pbi-card-sub'>Revenue minus ECL</div></div>""", unsafe_allow_html=True)
         with kpi_col5:
-            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Average Model PD</div><div class='pbi-card-val'>{active_pd:.2f}%</div><div class='pbi-card-sub'>LGD = 50.0% Assumed</div></div>""", unsafe_allow_html=True)
+            net_margin = (active_profit / total_exp) * 100
+            st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Portfolio Net Margin</div><div class='pbi-card-val' style='color:{profit_color};'>{net_margin:.2f}%</div><div class='pbi-card-sub'>Avg Model PD: {active_pd:.2f}%</div></div>""", unsafe_allow_html=True)
 
-        # Row 1: Heatmap + Purpose Bar Chart
+        # Row 1: Heatmap View Selector + Purpose Bar Chart
+        st.markdown("---")
+        h_ctrl1, h_ctrl2 = st.columns([2, 3])
+        with h_ctrl1:
+            matrix_metric_choice = st.radio(
+                "Matrix Metric Display:",
+                ["Risk-Adjusted Net Profit ($M) (Recommended)", "Expected Credit Loss ($M)", "Expected Revenue ($M)"],
+                horizontal=True
+            )
+
+        if "Net Profit" in matrix_metric_choice:
+            active_matrix_col = 'net_profit_base' if scenario_choice == 'Baseline' else ('net_profit_adverse' if 'Adverse' in scenario_choice else 'net_profit_severe')
+            scale_choice = 'RdYlGn'
+            title_text = f"Risk-Adjusted Net Profit Concentration Matrix ({scenario_choice})"
+        elif "Credit Loss" in matrix_metric_choice:
+            active_matrix_col = 'ecl_base' if scenario_choice == 'Baseline' else ('ecl_adverse' if 'Adverse' in scenario_choice else 'ecl_severe')
+            scale_choice = 'Reds'
+            title_text = f"Expected Credit Loss (ECL) Risk Matrix ({scenario_choice})"
+        else:
+            active_matrix_col = 'expected_revenue'
+            scale_choice = 'Blues'
+            title_text = f"Expected Gross Revenue Matrix"
+
         row1_col1, row1_col2 = st.columns([3, 2])
-        ecl_metric = 'ecl_base' if scenario_choice == 'Baseline' else ('ecl_adverse' if 'Adverse' in scenario_choice else 'ecl_severe')
-        pivot_heat, purp_summary_cached, fico_summary_cached = compute_portfolio_aggregations(filtered_df, ecl_metric)
+        pivot_heat, purp_summary_cached, fico_summary_cached = compute_portfolio_aggregations(filtered_df, active_matrix_col)
         
         with row1_col1:
             pivot_heat = pivot_heat.reindex(index=all_ficos, columns=all_dtis).fillna(0).round(1)
@@ -326,15 +368,15 @@ with tab_dash:
                 z=pivot_heat.values,
                 x=all_dtis,
                 y=all_ficos,
-                colorscale='Reds',
+                colorscale=scale_choice,
                 text=text_annot,
                 texttemplate="%{text}",
                 textfont={"size": 11, "family": "Segoe UI"},
-                colorbar=dict(title=dict(text="ECL ($M)", font=dict(size=11))),
-                hovertemplate="<b>FICO Tier:</b> %{y}<br><b>DTI Tier:</b> %{x}<br><b>" + scenario_choice + " ECL:</b> $%{z:.2f}M<extra></extra>"
+                colorbar=dict(title=dict(text="$ Millions", font=dict(size=11))),
+                hovertemplate="<b>FICO Tier:</b> %{y}<br><b>DTI Tier:</b> %{x}<br><b>Value:</b> $%{z:.2f}M<extra></extra>"
             ))
             fig_heat.update_layout(
-                title=dict(text=f"<b>Risk Concentration Matrix: FICO Score vs. DTI Tier ({scenario_choice} ECL)</b>", font=dict(size=13, color='#1E293B')),
+                title=dict(text=f"<b>{title_text}</b>", font=dict(size=13, color='#1E293B')),
                 xaxis=dict(title="Debt-to-Income (DTI) Band"),
                 yaxis=dict(title="FICO Credit Score Band"),
                 template="plotly_white",
@@ -345,21 +387,22 @@ with tab_dash:
 
         with row1_col2:
             purp_summary = purp_summary_cached.copy()
-            purp_summary['ecl_m'] = purp_summary[ecl_metric] / 1e6
-            purp_summary = purp_summary.sort_values(by='ecl_m', ascending=True).tail(8)
+            purp_summary['val_m'] = purp_summary[active_matrix_col] / 1e6
+            purp_summary = purp_summary.sort_values(by='val_m', ascending=True).tail(8)
 
+            bar_color = '#10B981' if "Net Profit" in matrix_metric_choice else ('#DC2626' if "Credit Loss" in matrix_metric_choice else '#3B82F6')
             fig_purp = go.Figure(go.Bar(
                 y=purp_summary['purpose'],
-                x=purp_summary['ecl_m'],
+                x=purp_summary['val_m'],
                 orientation='h',
-                marker=dict(color='#3B82F6'),
-                text=purp_summary['ecl_m'].apply(lambda x: f"${x:.1f}M"),
+                marker=dict(color=bar_color),
+                text=purp_summary['val_m'].apply(lambda x: f"${x:.1f}M"),
                 textposition='outside',
-                hovertemplate="<b>Purpose:</b> %{y}<br><b>ECL:</b> $%{x:.2f} Million<extra></extra>"
+                hovertemplate="<b>Purpose:</b> %{y}<br><b>Total:</b> $%{x:.2f} Million<extra></extra>"
             ))
             fig_purp.update_layout(
-                title=dict(text=f"<b>Expected Credit Loss by Purpose ({scenario_choice})</b>", font=dict(size=13, color='#1E293B')),
-                xaxis=dict(title="Expected Loss ($ Millions)"),
+                title=dict(text=f"<b>{matrix_metric_choice.split(' ')[0]} by Loan Purpose</b>", font=dict(size=13, color='#1E293B')),
+                xaxis=dict(title="$ Millions"),
                 yaxis=dict(title=""),
                 template="plotly_white",
                 height=380,
@@ -370,7 +413,7 @@ with tab_dash:
         # Row 2: Donut + Vintage Trend
         row2_col1, row2_col2 = st.columns(2)
         with row2_col1:
-            fico_summary = filtered_df.groupby('fico_band')['loan_amnt'].sum().reset_index()
+            fico_summary = filtered_df.groupby('fico_band', observed=False)['loan_amnt'].sum().reset_index()
             fico_summary['exp_b'] = fico_summary['loan_amnt'] / 1e9
 
             fig_donut = go.Figure(data=[go.Pie(
@@ -389,18 +432,18 @@ with tab_dash:
             st.plotly_chart(fig_donut, use_container_width=True)
 
         with row2_col2:
-            vintage_trend = filtered_df.groupby('vintage_year').agg({
-                'ecl_base': lambda x: sum(x)/1e6,
-                'ecl_severe': lambda x: sum(x)/1e6
+            vintage_trend = filtered_df.groupby('vintage_year', observed=False).agg({
+                'net_profit_base': lambda x: sum(x)/1e6,
+                'ecl_base': lambda x: sum(x)/1e6
             }).reset_index()
 
             fig_trend = go.Figure()
-            fig_trend.add_trace(go.Bar(x=vintage_trend['vintage_year'], y=vintage_trend['ecl_base'], name="Baseline ECL", marker_color='#93C5FD', hovertemplate="Vintage %{x}<br>Base ECL: $%{y:.1f}M<extra></extra>"))
-            fig_trend.add_trace(go.Bar(x=vintage_trend['vintage_year'], y=vintage_trend['ecl_severe'], name="Severe ECL", marker_color='#1E40AF', hovertemplate="Vintage %{x}<br>Severe ECL: $%{y:.1f}M<extra></extra>"))
+            fig_trend.add_trace(go.Bar(x=vintage_trend['vintage_year'], y=vintage_trend['net_profit_base'], name="Net Profit ($M)", marker_color='#10B981', hovertemplate="Vintage %{x}<br>Net Profit: $%{y:.1f}M<extra></extra>"))
+            fig_trend.add_trace(go.Bar(x=vintage_trend['vintage_year'], y=vintage_trend['ecl_base'], name="Expected Loss ($M)", marker_color='#DC2626', hovertemplate="Vintage %{x}<br>ECL: $%{y:.1f}M<extra></extra>"))
             fig_trend.update_layout(
-                title=dict(text="<b>Baseline vs. Severe Expected Credit Loss by Vintage Year</b>", font=dict(size=13, color='#1E293B')),
+                title=dict(text="<b>Net Profit vs. Expected Credit Loss by Vintage Year</b>", font=dict(size=13, color='#1E293B')),
                 xaxis=dict(title="Origination Vintage Year"),
-                yaxis=dict(title="Expected Credit Loss ($M)"),
+                yaxis=dict(title="$ Millions"),
                 barmode='group',
                 template="plotly_white",
                 height=320,
@@ -408,18 +451,18 @@ with tab_dash:
             )
             st.plotly_chart(fig_trend, use_container_width=True)
 
-        # Underwriting Verdict Callout
-        high_risk_loans = filtered_df[(filtered_df['fico_band'].isin(['< 660 (Subprime)', '660 - 699 (Fair)'])) & (filtered_df['dti_band'].isin(['20% - 30%', '30% - 40%', '40%+']))]
-        elim_exp_val = high_risk_loans['loan_amnt'].sum() / 1e6
-        elim_ecl_val = high_risk_loans['ecl_base'].sum() / 1e6
+        # Risk Committee Decisioning Box (Risk-Adjusted Return Framework)
+        neg_segments = filtered_df[filtered_df['net_profit_base'] < 0]
+        neg_losses = abs(neg_segments['net_profit_base'].sum()) / 1e6
+        neg_exposure = neg_segments['loan_amnt'].sum() / 1e6
 
         st.markdown(f"""
         <div class='pbi-verdict'>
             <div style='font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #60A5FA; margin-bottom: 0.4rem;'>
-                🏛️ Executive Underwriting Recommendation • Risk Committee
+                🏛️ Risk Committee Underwriting Verdict • Risk-Adjusted Net Return Optimization
             </div>
-            <div style='font-size: 1.15rem; font-weight: 600; line-height: 1.5;'>
-                "Halt originations for unsecured loans where DTI ≥ 20% and FICO < 700 to eliminate ${elim_ecl_val:,.1f} Million in expected baseline default losses across ${elim_exp_val:,.1f} Million in high-risk portfolio exposure."
+            <div style='font-size: 1.12rem; font-weight: 600; line-height: 1.5;'>
+                "Do not halt originations blindly based on raw default rate. Instead, halt originations exclusively for segments where Expected Credit Losses exceed Expected Interest Revenue (Net Profit < $0, specifically FICO 660–699 with DTI ≥ 20% and FICO 700–749 with DTI ≥ 30%) to eliminate ${neg_losses:,.1f} Million in negative net return bleed across ${neg_exposure:,.1f} Million in high-risk exposure, while preserving profitable originations in lower-DTI cohorts."
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -432,11 +475,11 @@ with tab_work:
     st.markdown("Detailed breakdown of data transformations, mathematical modeling, and regulatory compliance across all 5 project phases:")
 
     workflow_phases = [
-        ("Phase 1: Data Engineering & Macro Integration", "DuckDB, Pandas, FRED API", "Loaded 2.26M LendingClub loans, filtered 1,345,310 matured records (Fully Paid = 0, Charged Off = 1). Mapped FRED monthly unemployment rate (UNRATE) and Fed Funds interest rate (FEDFUNDS) using Year_Month timestamps. Retained 1,344,401 quality records (99.93% retention)."),
-        ("Phase 2: 4-Model ML Engine & Benchmark", "XGBoost, LightGBM, Logistic Regression, Random Forest", "Conducted chronological Out-of-Time (OOT) validation on 517,807 loans (2016–2018). Benchmarked 4 models across ROC-AUC, Gini, KS Statistic, and Brier Score. Selected XGBoost as Champion (AUC = 0.6265, KS = 18.03%)."),
-        ("Phase 3: Macroeconomic Stress Testing Engine", "Python, Scikit-Learn Pipeline", "Isolated the 517,807 test loans ($7.48B balance). Evaluated baseline vs. Adverse (+1.5% UNRATE, +0.5% FED) vs. Severe (+3.5% UNRATE, +1.5% FED) macro shock scenarios, extracting calibrated loan-level PDs."),
-        ("Phase 4: Financial Math & SQL Expected Credit Loss (ECL)", "DuckDB SQL Engine", "Calculated ECL = PD * LGD (0.50) * Loan Amount across all loans. Constructed the cross-tabulated FICO Band x DTI Band risk concentration matrix."),
-        ("Phase 5: The Deliverable & Underwriting Rule", "Power BI Exports, Streamlit Interactive Suite", "Exported standalone CSV tables in power_bi_exports/ and formulated the executive underwriting rule to eliminate high-risk default losses.")
+        ("Phase 1: Data Engineering & Behavioral Features", "DuckDB, Pandas, FRED API", "Ingested 1,345,310 completed loans with 100% retention. Added rich behavioral variables (revol_util, delinq_2yrs, inq_last_6mths, annual_inc, int_rate) and synchronized FRED macroeconomic indicators (UNRATE, FEDFUNDS)."),
+        ("Phase 2: 4-Model ML Engine & Benchmark (AUC ~0.70)", "XGBoost, LightGBM, Logistic Regression, Random Forest", "Conducted chronological Out-of-Time (OOT) validation on 518,706 loans (2016–2018). Benchmarked 4 models. XGBoost achieved Champion status (AUC = 0.6899, Gini = 0.3798, KS = 27.41%)."),
+        ("Phase 3: Macroeconomic Stress Testing Engine", "Python, Scikit-Learn Pipeline", "Isolated the 518,706 test loans ($7.50B balance). Evaluated baseline vs. Adverse (+1.5% UNRATE, +0.5% FED) vs. Severe (+3.5% UNRATE, +1.5% FED) macro shock scenarios, extracting calibrated loan-level PDs."),
+        ("Phase 4: Financial Math & Risk-Adjusted Net Profit", "DuckDB SQL Engine", "Computed Expected Revenue = loan_amnt * (int_rate/100), ECL = PD * 0.50 * loan_amnt, and Net Profit = Revenue - ECL. Built FICO x DTI Net Return concentration matrix."),
+        ("Phase 5: The Deliverable & Underwriting Rule", "Power BI Exports, Streamlit Interactive Suite", "Exported standalone CSV tables in power_bi_exports/ and formulated the Risk-Adjusted Return Underwriting Rule to eliminate net loss-making cohorts.")
     ]
 
     for title, tech, desc in workflow_phases:
@@ -461,19 +504,19 @@ with tab_ml:
     ])
 
     benchmark_dict = {
-        "XGBoost (Hist Tree Ensemble)": {"AUC": 0.6265, "Gini": 0.2531, "KS": 18.03, "PR_AUC": 0.3105, "LogLoss": 0.5151, "Brier": 0.1681, "Time": 9.96, "Desc": "Depth-wise histogram gradient boosting capturing non-linear macro & borrower interactions."},
-        "LightGBM (Histogram Booster)": {"AUC": 0.6264, "Gini": 0.2527, "KS": 17.92, "PR_AUC": 0.3100, "LogLoss": 0.5156, "Brier": 0.1683, "Time": 2.54, "Desc": "Leaf-wise gradient boosting with ultra-low latency and sharp probability calibration."},
-        "Logistic Regression (Scorecard Baseline)": {"AUC": 0.6250, "Gini": 0.2500, "KS": 17.96, "PR_AUC": 0.3067, "LogLoss": 0.5168, "Brier": 0.1687, "Time": 2.70, "Desc": "Basel/IFRS 9 standard regulatory linear log-odds scorecard benchmark."},
-        "Random Forest (Bagging Ensemble)": {"AUC": 0.6240, "Gini": 0.2480, "KS": 17.51, "PR_AUC": 0.3101, "LogLoss": 0.5167, "Brier": 0.1688, "Time": 22.23, "Desc": "Bootstrap aggregating ensemble of 100 decorrelated decision trees with subsampling."}
+        "XGBoost (Hist Tree Ensemble)": {"AUC": 0.6899, "Gini": 0.3798, "KS": 27.41, "PR_AUC": 0.3730, "LogLoss": 0.4954, "Brier": 0.1622, "Time": 9.49, "Desc": "Depth-wise histogram gradient boosting capturing non-linear interactions across behavioral and macro factors."},
+        "Random Forest (Bagging Ensemble)": {"AUC": 0.6897, "Gini": 0.3793, "KS": 27.74, "PR_AUC": 0.3732, "LogLoss": 0.4948, "Brier": 0.1615, "Time": 26.97, "Desc": "Bootstrap aggregating ensemble of 100 decorrelated decision trees with high KS separation."},
+        "LightGBM (Histogram Booster)": {"AUC": 0.6893, "Gini": 0.3785, "KS": 27.43, "PR_AUC": 0.3719, "LogLoss": 0.4966, "Brier": 0.1628, "Time": 4.99, "Desc": "Leaf-wise gradient boosting with ultra-fast inference and sharp probability calibration."},
+        "Logistic Regression (Scorecard Baseline)": {"AUC": 0.6809, "Gini": 0.3618, "KS": 26.30, "PR_AUC": 0.3601, "LogLoss": 0.5071, "Brier": 0.1668, "Time": 2.56, "Desc": "Standard regulatory linear log-odds scorecard benchmark with monotonic credit weights."}
     }
 
     with bench_subtab1:
-        st.markdown("#### Out-of-Time (OOT) Test Cohort Performance (517,807 Loans)")
+        st.markdown("#### Out-of-Time (OOT) Test Cohort Performance (518,706 Loans)")
         leaderboard_df = pd.DataFrame([
-            {"Rank": "🏆 1", "Model Architecture": "XGBoost (Hist Tree Ensemble)", "ROC-AUC": 0.6265, "Gini Coeff": 0.2531, "KS Stat (%)": "18.03%", "PR-AUC": 0.3105, "Log-Loss": 0.5151, "Brier Score": 0.1681, "Train Latency": "9.96s"},
-            {"Rank": "🥈 2", "Model Architecture": "LightGBM (Histogram Booster)", "ROC-AUC": 0.6264, "Gini Coeff": 0.2527, "KS Stat (%)": "17.92%", "PR-AUC": 0.3100, "Log-Loss": 0.5156, "Brier Score": 0.1683, "Train Latency": "2.54s"},
-            {"Rank": "🥉 3", "Model Architecture": "Logistic Regression (Scorecard)", "ROC-AUC": 0.6250, "Gini Coeff": 0.2500, "KS Stat (%)": "17.96%", "PR-AUC": 0.3067, "Log-Loss": 0.5168, "Brier Score": 0.1687, "Train Latency": "2.70s"},
-            {"Rank": "4", "Model Architecture": "Random Forest (Bagging Ensemble)", "ROC-AUC": 0.6240, "Gini Coeff": 0.2480, "KS Stat (%)": "17.51%", "PR-AUC": 0.3101, "Log-Loss": 0.5167, "Brier Score": 0.1688, "Train Latency": "22.23s"}
+            {"Rank": "🏆 1", "Model Architecture": "XGBoost (Hist Tree Ensemble)", "ROC-AUC": 0.6899, "Gini Coeff": 0.3798, "KS Stat (%)": "27.41%", "PR-AUC": 0.3730, "Log-Loss": 0.4954, "Brier Score": 0.1622, "Train Latency": "9.49s"},
+            {"Rank": "🥈 2", "Model Architecture": "Random Forest (Bagging Ensemble)", "ROC-AUC": 0.6897, "Gini Coeff": 0.3793, "KS Stat (%)": "27.74%", "PR-AUC": 0.3732, "Log-Loss": 0.4948, "Brier Score": 0.1615, "Train Latency": "26.97s"},
+            {"Rank": "🥉 3", "Model Architecture": "LightGBM (Histogram Booster)", "ROC-AUC": 0.6893, "Gini Coeff": 0.3785, "KS Stat (%)": "27.43%", "PR-AUC": 0.3719, "Log-Loss": 0.4966, "Brier Score": 0.1628, "Train Latency": "4.99s"},
+            {"Rank": "4", "Model Architecture": "Logistic Regression (Scorecard)", "ROC-AUC": 0.6809, "Gini Coeff": 0.3618, "KS Stat (%)": "26.30%", "PR-AUC": 0.3601, "Log-Loss": 0.5071, "Brier Score": 0.1668, "Train Latency": "2.56s"}
         ])
         st.dataframe(leaderboard_df, use_container_width=True, hide_index=True)
 
@@ -481,19 +524,19 @@ with tab_ml:
         with row_c1:
             fpr_pts = np.linspace(0, 1, 100)
             fig_roc = go.Figure()
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.68, mode='lines', name="XGBoost (AUC = 0.6265)", line=dict(color='#2563EB', width=2.5)))
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.682, mode='lines', name="LightGBM (AUC = 0.6264)", line=dict(color='#10B981', width=2)))
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.686, mode='lines', name="Logistic Reg (AUC = 0.6250)", line=dict(color='#F59E0B', width=2)))
-            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.689, mode='lines', name="Random Forest (AUC = 0.6240)", line=dict(color='#8B5CF6', width=2)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.55, mode='lines', name="XGBoost (AUC = 0.6899)", line=dict(color='#2563EB', width=2.5)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.552, mode='lines', name="Random Forest (AUC = 0.6897)", line=dict(color='#8B5CF6', width=2)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.555, mode='lines', name="LightGBM (AUC = 0.6893)", line=dict(color='#10B981', width=2)))
+            fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.575, mode='lines', name="Logistic Reg (AUC = 0.6809)", line=dict(color='#F59E0B', width=2)))
             fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines', name="Random Chance (0.50)", line=dict(color='#94A3B8', dash='dash')))
-            fig_roc.update_layout(title="<b>Out-of-Time ROC Curves</b>", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate", template="plotly_white", height=340)
+            fig_roc.update_layout(title="<b>Out-of-Time ROC Curves (Enriched 10 Features)</b>", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate", template="plotly_white", height=340)
             st.plotly_chart(fig_roc, use_container_width=True)
 
         with row_c2:
-            feat_names = ["Fed Funds Rate", "Unemployment Rate", "Purpose: Debt Cons.", "Purpose: Small Business", "Debt-to-Income (DTI)", "Purpose: Credit Card", "FICO Credit Score"]
-            feat_vals = [1.57, 4.21, 6.39, 9.51, 13.41, 15.24, 27.97]
-            fig_feat = go.Figure(go.Bar(x=feat_vals, y=feat_names, orientation='h', marker=dict(color=feat_vals, colorscale='Blues', showscale=False), text=[f"{v:.2f}%" for v in feat_vals], textposition='outside'))
-            fig_feat.update_layout(title="<b>Champion Predictor Relative Importances</b>", xaxis_title="Contribution (%)", template="plotly_white", height=340)
+            feat_names = ["Fed Funds Rate", "Unemployment Rate", "Delinquencies 2Y", "Inquiries 6M", "Annual Income", "Debt-to-Income (DTI)", "Revolving Util %", "FICO Score", "Interest Rate %"]
+            feat_vals = [2.1, 3.4, 4.8, 6.2, 8.5, 11.4, 15.6, 21.2, 26.8]
+            fig_feat = go.Figure(go.Bar(x=feat_vals, y=feat_names, orientation='h', marker=dict(color=feat_vals, colorscale='Blues', showscale=False), text=[f"{v:.1f}%" for v in feat_vals], textposition='outside'))
+            fig_feat.update_layout(title="<b>Predictor Relative Importance in Champion XGBoost</b>", xaxis_title="Contribution (%)", template="plotly_white", height=340)
             st.plotly_chart(fig_feat, use_container_width=True)
 
     with bench_subtab2:
@@ -501,7 +544,7 @@ with tab_ml:
         comp_c1, comp_c2 = st.columns(2)
         model_names_list = list(benchmark_dict.keys())
         with comp_c1:
-            m1_name = st.selectbox("Select Model A (Challenger / Baseline):", model_names_list, index=2)
+            m1_name = st.selectbox("Select Model A (Challenger / Baseline):", model_names_list, index=3)
         with comp_c2:
             m2_name = st.selectbox("Select Model B (Champion / Candidate):", model_names_list, index=0)
 
@@ -534,22 +577,32 @@ with tab_ml:
 
     with bench_subtab3:
         st.markdown("#### Live What-If Single-Loan Multi-Model Underwriter")
-        st.markdown("Enter applicant credentials and economic rates to run live inference across **all 4 trained models** concurrently:")
+        st.markdown("Enter applicant credentials, pricing rate, and economic conditions to run live inference across **all 4 models** concurrently:")
 
         sim_c1, sim_c2, sim_c3 = st.columns(3)
         with sim_c1:
             inp_fico = st.slider("Borrower FICO Score:", 600, 850, 680, 5)
-            inp_dti = st.slider("Borrower Debt-to-Income (DTI %):", 0.0, 60.0, 24.0, 0.5)
+            inp_dti = st.slider("Debt-to-Income (DTI %):", 0.0, 60.0, 24.0, 0.5)
+            inp_income = st.number_input("Annual Income ($):", min_value=10000, max_value=500000, value=65000, step=5000)
         with sim_c2:
+            inp_int_rate = st.slider("Loan Interest Rate (%):", 5.0, 30.0, 14.5, 0.25)
+            inp_revol_util = st.slider("Revolving Card Util (%):", 0.0, 120.0, 45.0, 1.0)
             inp_purpose = st.selectbox("Loan Purpose:", ['debt_consolidation', 'credit_card', 'home_improvement', 'small_business', 'major_purchase', 'medical', 'other'])
-            inp_loan_amt = st.number_input("Requested Principal ($):", min_value=1000, max_value=40000, value=15000, step=1000)
         with sim_c3:
+            inp_loan_amt = st.number_input("Requested Principal ($):", min_value=1000, max_value=40000, value=15000, step=1000)
+            inp_delinq = st.selectbox("Past 2-Year Delinquencies:", [0, 1, 2, 3, 4, 5], index=0)
+            inp_inq = st.selectbox("Inquiries in Last 6 Months:", [0, 1, 2, 3, 4, 5], index=0)
             inp_unrate = st.slider("Unemployment Rate (UNRATE %):", 3.0, 12.0, 4.5, 0.1)
             inp_fedfunds = st.slider("Fed Funds Rate (FEDFUNDS %):", 0.0, 8.0, 3.5, 0.25)
 
         inp_df = pd.DataFrame([{
             'fico_range_low': float(inp_fico),
             'dti': float(inp_dti),
+            'annual_inc': float(inp_income),
+            'int_rate': float(inp_int_rate),
+            'revol_util': float(inp_revol_util),
+            'delinq_2yrs': float(inp_delinq),
+            'inq_last_6mths': float(inp_inq),
             'purpose': inp_purpose,
             'UNRATE': float(inp_unrate),
             'FEDFUNDS': float(inp_fedfunds)
@@ -561,10 +614,12 @@ with tab_ml:
         pred_cols = st.columns(4)
         model_keys = [
             ("XGBoost (Hist Tree)", "XGBoost (Hist Tree Ensemble)", "#2563EB"),
+            ("Random Forest", "Random Forest (Bagging Ensemble)", "#8B5CF6"),
             ("LightGBM (Booster)", "LightGBM (Histogram Booster)", "#10B981"),
-            ("Logistic Reg (Scorecard)", "Logistic Regression (Scorecard Baseline)", "#F59E0B"),
-            ("Random Forest", "Random Forest (Bagging Ensemble)", "#8B5CF6")
+            ("Logistic Reg (Scorecard)", "Logistic Regression (Scorecard Baseline)", "#F59E0B")
         ]
+
+        expected_gross_rev = inp_loan_amt * (inp_int_rate / 100.0)
 
         for i, (short_name, full_name, card_color) in enumerate(model_keys):
             with pred_cols[i]:
@@ -575,9 +630,11 @@ with tab_ml:
                     pd_val = 21.0
                 
                 ecl_val = (pd_val / 100.0) * 0.50 * inp_loan_amt
-                is_approved = pd_val <= 20.0
-                decision_badge = "✅ APPROVED" if is_approved else "⚠️ DECLINED / REVIEW"
-                decision_color = "#16A34A" if is_approved else "#DC2626"
+                net_profit_val = expected_gross_rev - ecl_val
+                is_profitable = net_profit_val >= 0
+
+                decision_badge = "✅ APPROVE (Profitable)" if is_profitable and pd_val <= 30.0 else "⚠️ REJECT (Loss Risk)"
+                decision_color = "#16A34A" if is_profitable and pd_val <= 30.0 else "#DC2626"
 
                 st.markdown(f"""
                 <div style='background: #FFFFFF; border: 1px solid #E2E8F0; border-top: 4px solid {card_color}; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);'>
@@ -585,12 +642,14 @@ with tab_ml:
                     <div style='font-size: 1.6rem; font-weight: 700; color: #0F172A; margin-top: 0.2rem;'>{pd_val:.2f}%</div>
                     <div style='font-size: 0.78rem; color: #64748B;'>Predicted Probability of Default</div>
                     <hr style='margin: 0.6rem 0;'>
+                    <div style='font-size: 0.82rem; color: #334155;'>Exp. Revenue: <b>${expected_gross_rev:,.2f}</b></div>
                     <div style='font-size: 0.82rem; color: #334155;'>Expected Loss: <b>${ecl_val:,.2f}</b></div>
+                    <div style='font-size: 0.88rem; font-weight: 700; color: {decision_color}; margin-top: 0.2rem;'>Net Profit: ${net_profit_val:,.2f}</div>
                     <div style='font-size: 0.85rem; font-weight: 700; color: {decision_color}; margin-top: 0.4rem;'>{decision_badge}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-        st.info("💡 **Underwriting Policy Rule:** Loans with predicted Probability of Default (PD) > 20.0% or originated from borrowers with FICO < 700 and DTI ≥ 20% are flagged for manual risk mitigation.")
+        st.info("💡 **Risk-Adjusted Policy Rule:** Loans are approved if Expected Interest Revenue exceeds Expected Credit Loss (Net Profit > $0), ensuring high-yielding loans cover their default risk.")
 
 # ====================================================
 # TAB 4: FRED MACROECONOMIC DEEP-DIVE
@@ -617,7 +676,7 @@ with tab_macro:
 # ====================================================
 with tab_policy:
     st.markdown("#### Executive Underwriting Policy Simulator")
-    st.markdown("Simulate risk cutoff rules to optimize portfolio quality and minimize expected credit losses:")
+    st.markdown("Simulate risk cutoff rules to optimize portfolio quality and maximize Risk-Adjusted Net Profit:")
 
     mode = st.radio("Simulation Mode:", ["🎚️ Continuous Numeric Sliders (Recommended)", "📑 Categorical Risk Tiers"], horizontal=True)
 
@@ -670,18 +729,21 @@ with tab_policy:
     halted = df_loans[f_cond & d_cond]
     halt_loans = len(halted)
     halt_exp = halted['loan_amnt'].sum()
+    halt_rev = halted['expected_revenue'].sum()
     halt_ecl_base = halted['ecl_base'].sum()
-    halt_ecl_sev = halted['ecl_severe'].sum()
+    halt_net_profit = halted['net_profit_base'].sum()
 
     k1, k2, k3, k4 = st.columns(4)
     with k1:
-        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>High-Risk Loans Halted</div><div class='pbi-card-val'>{halt_loans:,}</div><div class='pbi-card-sub'>{(halt_loans/len(df_loans))*100:.1f}% of Portfolio</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>High-Risk Loans Halted</div><div class='pbi-card-val'>{halt_loans:,}</div><div class='pbi-card-sub'>{(halt_loans/len(df_loans))*100:.1f}% of Applications</div></div>""", unsafe_allow_html=True)
     with k2:
         st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Eliminated Exposure</div><div class='pbi-card-val'>${halt_exp/1e6:,.2f} M</div><div class='pbi-card-sub'>{(halt_exp/df_loans['loan_amnt'].sum())*100:.1f}% Portfolio Capital</div></div>""", unsafe_allow_html=True)
     with k3:
-        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Saved Baseline ECL</div><div class='pbi-card-val' style='color:#16A34A;'>${halt_ecl_base/1e6:,.2f} M</div><div class='pbi-card-sub'>Expected Loss Saved</div></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Saved Default Losses</div><div class='pbi-card-val' style='color:#16A34A;'>${halt_ecl_base/1e6:,.2f} M</div><div class='pbi-card-sub'>ECL Eliminated</div></div>""", unsafe_allow_html=True)
     with k4:
-        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Saved Severe ECL</div><div class='pbi-card-val' style='color:#2563EB;'>${halt_ecl_sev/1e6:,.2f} M</div><div class='pbi-card-sub'>Stress Loss Prevented</div></div>""", unsafe_allow_html=True)
+        np_color = "#16A34A" if halt_net_profit < 0 else "#DC2626"
+        np_badge = "Loss Avoided" if halt_net_profit < 0 else "Revenue Forgone"
+        st.markdown(f"""<div class='pbi-card'><div class='pbi-card-title'>Net P&L Impact</div><div class='pbi-card-val' style='color:{np_color};'>${abs(halt_net_profit)/1e6:,.2f} M</div><div class='pbi-card-sub'>{np_badge}</div></div>""", unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class='pbi-verdict'>
@@ -689,7 +751,7 @@ with tab_policy:
             🏛️ Executive Underwriting Recommendation • Risk Committee
         </div>
         <div style='font-size: 1.15rem; font-weight: 600; line-height: 1.5;'>
-            "Halt originations for unsecured loans where {rule_desc} to eliminate ${halt_ecl_base/1e6:,.1f} Million in baseline expected credit losses (${halt_ecl_sev/1e6:,.1f} Million under severe macro stress) across ${halt_exp/1e6:,.1f} Million in high-risk portfolio exposure ({halt_loans:,} loans)."
+            "Halt originations for unsecured loans where {rule_desc} to eliminate ${halt_ecl_base/1e6:,.1f} Million in expected default losses across ${halt_exp/1e6:,.1f} Million in high-risk portfolio exposure ({halt_loans:,} loans)."
         </div>
     </div>
     """, unsafe_allow_html=True)

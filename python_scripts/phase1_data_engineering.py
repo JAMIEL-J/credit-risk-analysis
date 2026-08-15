@@ -37,14 +37,19 @@ def run_phase1_pipeline(
     print("=" * 60)
 
     # 1 & 2. Load & Filter LendingClub data using DuckDB
-    print("\n[Step 1 & 2] Loading & filtering LendingClub loans via DuckDB...")
+    print("\n[Step 1 & 2] Loading & filtering LendingClub loans via DuckDB with behavioral features...")
     query = f"""
     SELECT 
-        loan_amnt, 
-        issue_d, 
-        dti, 
-        fico_range_low, 
+        loan_amnt,
+        int_rate,
+        annual_inc,
+        dti,
+        fico_range_low,
+        revol_util,
+        delinq_2yrs,
+        inq_last_6mths,
         purpose, 
+        issue_d,
         loan_status,
         CASE 
             WHEN loan_status = 'Charged Off' THEN 1 
@@ -56,6 +61,7 @@ def run_phase1_pipeline(
       AND issue_d IS NOT NULL
       AND loan_amnt IS NOT NULL
       AND fico_range_low IS NOT NULL
+      AND int_rate IS NOT NULL
     """
     
     con = duckdb.connect()
@@ -91,8 +97,8 @@ def run_phase1_pipeline(
     print("\n[Step 5] Merging loans with macroeconomic factors...")
     df_merged = pd.merge(df_loans, df_macro, on='Year_Month', how='left')
 
-    # 6. Data Quality Checks & Cleaning
-    print("\n[Step 6] Running Data Quality & Validation Checks...")
+    # 6. Data Quality Checks & Cleaning (datanalysis-credit-risk standard)
+    print("\n[Step 6] Running Data Quality & Preprocessing Checks...")
     initial_count = len(df_merged)
     
     # Check missing rate
@@ -101,20 +107,26 @@ def run_phase1_pipeline(
     for col, null_cnt in missing_summary.items():
         print(f"  - {col}: {null_cnt:,} ({null_cnt/initial_count*100:.2f}%)")
 
-    # Filter out records missing macro data or invalid DTI
-    df_clean = df_merged.dropna(subset=['UNRATE', 'FEDFUNDS', 'dti']).copy()
-    
-    # Filter abnormal/extreme negative or corrupted values
-    df_clean = df_clean[df_clean['dti'] >= 0]
-    df_clean = df_clean[df_clean['dti'] <= 100]  # Cap standard pre-loan DTI outlier noise
+    # Impute and clean behavioral credit features
+    df_clean = df_merged.dropna(subset=['UNRATE', 'FEDFUNDS']).copy()
+    df_clean['dti'] = df_clean['dti'].fillna(df_clean['dti'].median()).clip(0, 100)
+    df_clean['revol_util'] = df_clean['revol_util'].fillna(df_clean['revol_util'].median()).clip(0, 150)
+    df_clean['delinq_2yrs'] = df_clean['delinq_2yrs'].fillna(0).clip(0, 10)
+    df_clean['inq_last_6mths'] = df_clean['inq_last_6mths'].fillna(0).clip(0, 10)
+    df_clean['annual_inc'] = df_clean['annual_inc'].fillna(df_clean['annual_inc'].median()).clip(1000, 500000)
     
     # Reorder columns
     final_cols = [
         'issue_d', 
         'Year_Month', 
-        'loan_amnt', 
+        'loan_amnt',
+        'int_rate',
+        'annual_inc',
+        'dti',
         'fico_range_low', 
-        'dti', 
+        'revol_util',
+        'delinq_2yrs',
+        'inq_last_6mths',
         'purpose', 
         'UNRATE', 
         'FEDFUNDS', 

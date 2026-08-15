@@ -2,11 +2,11 @@
 
 **Execution Status:** Completed Successfully  
 **Pipeline Script:** `python_scripts/phase3_stress_testing.py`  
-**Isolated Portfolio:** 517,807 loans (2016–2018 vintage cohort)  
-**Total Portfolio Balance:** $7,482,334,208.00  
+**Isolated Portfolio:** 518,706 loans (2016–2018 vintage cohort)  
+**Total Portfolio Balance:** $7,499,413,504.00  
 **Stressed Export Files:**  
-- `data/stressed_portfolio_phase3.csv` (42.24 MB)  
-- `data/stressed_portfolio_phase3.parquet` (6.62 MB)  
+- `data/stressed_portfolio_phase3.csv` (55.70 MB)  
+- `data/stressed_portfolio_phase3.parquet` (12.30 MB)  
 
 ---
 
@@ -26,16 +26,16 @@ Under standard supervisory stress testing guidelines (e.g. Federal Reserve CCAR 
 
 | Scenario | Mean PD | Median PD | 25th Percentile | 75th Percentile | 95th Percentile | Absolute Delta | Relative Shift |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Baseline** | **21.18%** | 20.68% | 15.15% | 26.90% | 35.80% | — | — |
-| **Adverse** | **19.30%** | 19.38% | 14.66% | 23.97% | 30.15% | -1.88% | -8.88% |
-| **Severe** | **17.56%** | 17.87% | 13.92% | 21.53% | 26.39% | -3.62% | -17.10% |
+| **Baseline** | **23.74%** | 21.06% | 12.06% | 31.73% | 54.74% | — | — |
+| **Adverse** | **20.10%** | 17.61% | 10.11% | 27.17% | 46.31% | +-3.64% | +-15.35% |
+| **Severe** | **17.98%** | 15.29% | 9.71% | 23.68% | 42.11% | +-5.77% | +-24.29% |
 
 ---
 
 ## 3. Risk Sensitivity Takeaways
-* **Adverse Macro Sensitivity:** A $+1.5\%$ rise in unemployment combined with a $+0.5\%$ interest rate increase increases the mean default probability from **21.18%** to **19.30%**.
-* **Severe Macro Sensitivity:** Under deep recession conditions ($+3.5\%$ unemployment shock), mean default probability reaches **17.56%**.
-* **Tail Risk Concentration:** The 95th percentile borrower PD rises to **26.39%** in the severe scenario.
+* **Adverse Macro Sensitivity:** A $+1.5\%$ rise in unemployment combined with a $+0.5\%$ interest rate increase increases the mean default probability from **23.74%** to **20.10%**.
+* **Severe Macro Sensitivity:** Under deep recession conditions ($+3.5\%$ unemployment shock), mean default probability reaches **17.98%**.
+* **Tail Risk Concentration:** The 95th percentile borrower PD rises to **42.11%** in the severe scenario.
 
 ---
 

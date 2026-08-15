@@ -1,5 +1,5 @@
-# 🏛️ Credit Portfolio Macroeconomic Stress Testing & Expected Credit Loss Engine
-> **Point-in-Time (PiT) Credit Risk Modeling, 4-Model Machine Learning Benchmark, and Dynamic ECL Stress Testing under CECL / IFRS 9 Guidelines**
+# 🏛️ Credit Portfolio Macroeconomic Stress Testing & Risk-Adjusted Net Return Engine
+> **Point-in-Time (PiT) Machine Learning (AUC ~0.70), Risk-Adjusted Return Optimization, and Dynamic ECL Stress Testing under CECL / IFRS 9 Guidelines**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.40%2B-FF4B4B.svg)](https://streamlit.io/)
@@ -13,16 +13,21 @@
 ## 📌 Executive Summary & Business Problem
 
 ### The Business Question:
-> *"How do macroeconomic downturns (unemployment spikes and interest rate hikes) transmit into default losses across our consumer loan portfolio, what is the dollar Expected Credit Loss (ECL), and what precise underwriting cutoffs should be implemented to eliminate high-risk exposure?"*
+> *"How do macroeconomic downturns transmit into default losses across our consumer loan portfolio, what is the Expected Credit Loss (ECL), and what precise Risk-Adjusted Underwriting Rules will maximize portfolio Net Profit while eliminating loss-making segments?"*
 
-### The Flaw of Traditional Scorecards:
-Traditional retail lending scorecards operate **Through-the-Cycle (TTC)**—evaluating borrower risk purely on static borrower attributes (FICO score, DTI ratio, purpose) while assuming constant economic conditions. When economic shocks occur, static models underpredict defaults, resulting in massive unexpected capital losses and regulatory non-compliance.
+### The Flaw of Traditional Scorecards & Naive Loss Cutoffs:
+1. **Through-the-Cycle (TTC) Flaw:** Traditional scorecards evaluate borrower risk purely on static attributes while ignoring macroeconomic conditions (`UNRATE` and `FEDFUNDS`).
+2. **Naive Loss-Based Cutoffs Flaw:** Halting originations purely because a borrower cohort has an elevated default rate is sub-optimal. If higher-risk borrowers pay sufficiently high interest rates (e.g. 14%–18%), their interest revenue can comfortably cover default losses, generating strong positive net returns.
 
 ### The Solution:
-This project builds a **Point-in-Time (PiT)** credit risk engine that integrates **1.34 Million LendingClub loan records** with **Federal Reserve (FRED) macroeconomic indicators** (`UNRATE` and `FEDFUNDS`). It benchmarks **4 machine learning architectures**, stress tests the portfolio under multiple economic scenarios, computes exact dollar Expected Credit Loss ($\text{ECL}$), and provides:
-1. **Interactive Streamlit Web Dashboard:** Top header navigation with tabs, multi-dimensional slicers, live model comparators, and real-time single-loan underwriting.
-2. **High-Performance Multi-Tier Caching:** Persistent disk caching, RAM downcasting ($< 180\text{MB}$ memory footprint), and sub-10ms response times.
-3. **Universal BI Export Hub (`power_bi_exports/`):** Pre-aggregated and loan-level CSVs ready for immediate import into **Power BI**, **Tableau**, **Looker Studio**, or **Qlik Sense**.
+This project builds an end-to-end **Point-in-Time (PiT) Risk-Adjusted Return Engine** integrating **1.345 Million LendingClub loans** with **Federal Reserve (FRED)** macroeconomic indicators. It features:
+1. **Enriched Behavioral ML Architecture (AUC ~0.70):** Leverages `int_rate`, `revol_util`, `delinq_2yrs`, `inq_last_6mths`, `annual_inc`, `dti`, `fico_range_low`, `purpose`, and FRED macro factors across 4 benchmarked algorithms.
+2. **Financial Formulation & Net Profit Optimization:**
+   $$\text{Expected Revenue} = \text{loan\_amnt} \times \left(\frac{\text{int\_rate}}{100}\right)$$
+   $$\text{Expected Credit Loss (ECL)} = \text{PD} \times \text{LGD (50\%)} \times \text{loan\_amnt}$$
+   $$\mathbf{\text{Net Profit}} = \mathbf{\text{Expected Revenue}} - \mathbf{\text{Expected Credit Loss (ECL)}}$$
+3. **Interactive Streamlit Web Dashboard:** Top-level navigation with 5 modular tabs, interactive FICO $\times$ DTI Net Profit matrices, head-to-head model comparators, and a live 4-model single-loan underwriting simulator.
+4. **Universal BI Export Hub ([`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/)):** Pre-aggregated and loan-level CSVs ready for immediate import into **Power BI**, **Tableau**, or **Looker Studio**.
 
 ---
 
@@ -30,10 +35,10 @@ This project builds a **Point-in-Time (PiT)** credit risk engine that integrates
 
 ```mermaid
 flowchart LR
-    P1["<b>Phase 1: Data Engineering</b><br/>1.34M Closed Loans + FRED Macro (UNRATE / FEDFUNDS)"] --> P2["<b>Phase 2: ML Benchmark</b><br/>4-Model OOT Validation<br/>(XGBoost, LightGBM, LR, RF)"]
-    P2 --> P3["<b>Phase 3: Stress Testing</b><br/>Baseline, Adverse (+1.5% U), Severe (+3.5% U)"]
-    P3 --> P4["<b>Phase 4: SQL Financial Math</b><br/>ECL = PD x LGD (50%) x EAD<br/>FICO x DTI Risk Matrix"]
-    P4 --> P5["<b>Phase 5: The Deliverable</b><br/>Streamlit Live App + Power BI / Tableau Exports"]
+    P1["<b>Phase 1: Data Engineering</b><br/>1.345M Loans + Behavioral Features<br/>+ FRED Macro (UNRATE / FEDFUNDS)"] --> P2["<b>Phase 2: ML Benchmark (AUC ~0.70)</b><br/>4-Model OOT Validation<br/>(XGBoost, LightGBM, LR, RF)"]
+    P2 --> P3["<b>Phase 3: Macro Stress Testing</b><br/>Baseline, Adverse (+1.5% U), Severe (+3.5% U)"]
+    P3 --> P4["<b>Phase 4: SQL Financial Math</b><br/>Net Profit = Revenue - ECL<br/>FICO x DTI Net Return Matrix"]
+    P4 --> P5["<b>Phase 5: The Deliverable</b><br/>Streamlit Live Dashboard + Power BI / Tableau Exports"]
 ```
 
 ---
@@ -42,51 +47,50 @@ flowchart LR
 
 | Phase | Milestone | Methodology & Technical Execution | Primary Artifacts |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Data Engineering & Macro Integration** | • Ingested 2.26M rows via DuckDB; filtered 1,345,310 completed loans (Fully Paid = 0, Charged Off = 1).<br>• Synchronized FRED monthly unemployment (`UNRATE`) and interest rates (`FEDFUNDS`) via `Year_Month` keys.<br>• Screened missing values and capped DTI outliers (99.93% retention rate). | • [`cleaned_loans_phase1.parquet`](file:///J:/Finance%20Projects/Credit/data/cleaned_loans_phase1.parquet)<br>• [`Phase1_Data_Engineering_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase1_Data_Engineering_Report.md) |
-| **Phase 2** | **4-Model ML Engine & Benchmark** | • Applied **Temporal Out-of-Time (OOT)** split (Train: 2007–2015, Test: 2016–2018).<br>• Benchmarked 4 models: **XGBoost, LightGBM, Logistic Regression, Random Forest**.<br>• Selected **XGBoost (Hist Tree)** as Champion ($\text{AUC} = 0.6265, \text{KS} = 18.03\%$). | • [`02_phase2_model_engine.ipynb`](file:///J:/Finance%20Projects/Credit/02_phase2_model_engine.ipynb)<br>• [`models/all_models.joblib`](file:///J:/Finance%20Projects/Credit/models/all_models.joblib) |
-| **Phase 3** | **Macroeconomic Stress Testing** | • Isolated 517,807 active test loans ($\$7.48\text{B}$ exposure).<br>• Simulated 3 supervisory scenarios: Baseline (0.0% shock), Adverse ($+1.5\%$ U / $+0.5\%$ R), and Severe ($+3.5\%$ U / $+1.5\%$ R).<br>• Generated individual default probabilities: $\text{PD}_{\text{base}}$, $\text{PD}_{\text{adverse}}$, $\text{PD}_{\text{severe}}$. | • [`03_phase3_stress_testing.ipynb`](file:///J:/Finance%20Projects/Credit/03_phase3_stress_testing.ipynb)<br>• [`stressed_portfolio_phase3.parquet`](file:///J:/Finance%20Projects/Credit/data/stressed_portfolio_phase3.parquet) |
-| **Phase 4** | **Financial Math & SQL ECL Engine** | • Implemented regulatory accounting equation: $\text{ECL} = \text{PD} \times 0.50 \times \text{loan\_amnt}$.<br>• Calculated incremental stress gap ($\text{ECL}_{\text{Severe}} - \text{ECL}_{\text{Base}}$).<br>• Generated cross-tabulated **FICO Score Band $\times$ DTI Band** risk matrix via DuckDB. | • [`phase4_ecl_calculation.sql`](file:///J:/Finance%20Projects/Credit/sql_scripts/phase4_ecl_calculation.sql)<br>• [`loan_level_ecl_results.parquet`](file:///J:/Finance%20Projects/Credit/data/loan_level_ecl_results.parquet) |
-| **Phase 5** | **The Deliverable: Dashboard & BI Exports** | • Built an interactive **Streamlit Web Dashboard** with top header tabs, multi-dimensional slicers, and Plotly Graph Objects.<br>• Prepared structured datasets in [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/) for **Power BI / Tableau**.<br>• Formulated the **Risk Committee Underwriting Policy Rule**. | • [`app.py`](file:///J:/Finance%20Projects/Credit/app.py)<br>• [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/) |
+| **Phase 1** | **Data Engineering & Behavioral Features** | • Ingested 1,345,310 completed loans with 100% data retention via DuckDB.<br>• Integrated 5 behavioral features: `revol_util`, `delinq_2yrs`, `inq_last_6mths`, `annual_inc`, `int_rate`.<br>• Synchronized FRED monthly `UNRATE` and `FEDFUNDS` via `Year_Month` keys. | • [`cleaned_loans_phase1.parquet`](file:///J:/Finance%20Projects/Credit/data/cleaned_loans_phase1.parquet)<br>• [`reports/Phase1_Data_Engineering_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase1_Data_Engineering_Report.md) |
+| **Phase 2** | **4-Model ML Engine & Benchmark (AUC ~0.70)** | • Applied temporal **Out-of-Time (OOT)** validation on **518,706 loans** (2016–2018).<br>• Benchmarked 4 models: **XGBoost, Random Forest, LightGBM, Logistic Regression**.<br>• **XGBoost (Champion):** $\text{AUC} = 0.6899$, $\text{Gini} = 0.3798$, $\text{KS} = 27.41\%$. | • [`02_phase2_model_engine.ipynb`](file:///J:/Finance%20Projects/Credit/02_phase2_model_engine.ipynb)<br>• [`models/all_models.joblib`](file:///J:/Finance%20Projects/Credit/models/all_models.joblib) |
+| **Phase 3** | **Macroeconomic Stress Testing Engine** | • Isolated 518,706 active test loans ($\$7.50\text{B}$ exposure).<br>• Evaluated Baseline, Adverse ($+1.5\%$ U / $+0.5\%$ R), and Severe ($+3.5\%$ U / $+1.5\%$ R) scenarios.<br>• Generated individual default probabilities: $\text{PD}_{\text{base}}$, $\text{PD}_{\text{adverse}}$, $\text{PD}_{\text{severe}}$. | • [`03_phase3_stress_testing.ipynb`](file:///J:/Finance%20Projects/Credit/03_phase3_stress_testing.ipynb)<br>• [`stressed_portfolio_phase3.parquet`](file:///J:/Finance%20Projects/Credit/data/stressed_portfolio_phase3.parquet) |
+| **Phase 4** | **Financial Math & Risk-Adjusted Net Profit** | • Implemented financial accounting formulas in DuckDB SQL.<br>• Computed $\text{Gross Revenue}$, regulatory $\text{ECL}$, and $\text{Net Profit} = \text{Revenue} - \text{ECL}$.<br>• Isolated negative net return segments where losses exceed interest income. | • [`sql_scripts/phase4_ecl_calculation.sql`](file:///J:/Finance%20Projects/Credit/sql_scripts/phase4_ecl_calculation.sql)<br>• [`loan_level_ecl_results.parquet`](file:///J:/Finance%20Projects/Credit/data/loan_level_ecl_results.parquet) |
+| **Phase 5** | **The Deliverable: Dashboard & BI Exports** | • Built an interactive **Streamlit Web Dashboard** featuring Net Profit matrix heatmaps, 4-model comparative analytics, and real-time loan underwriting.<br>• Exported standalone BI CSV tables in [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/).<br>• Formulated the **Risk Committee Decisioning Rule**. | • [`app.py`](file:///J:/Finance%20Projects/Credit/app.py)<br>• [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/) |
 
 ---
 
-## 🤖 Champion-Challenger Model Benchmark Leaderboard
+## 🤖 4-Model Benchmark Leaderboard (Out-of-Time Test Set)
 
-Models were evaluated strictly on the **517,807 Out-of-Time test cohort** (2016–2018 vintages):
+Models evaluated on the **518,706 Out-of-Time test cohort** (2016–2018 vintages):
 
 | Rank | Model Architecture | ROC-AUC | Gini ($2 \cdot \text{AUC} - 1$) | KS Statistic (%) | PR-AUC | Log-Loss | Brier Score | Training Time |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 🥇 | **XGBoost (Hist Tree Ensemble)** | **0.6265** | **0.2531** | **18.03%** | **0.3105** | **0.5151** | **0.1681** | **9.96s** |
-| 🥈 | **LightGBM (Histogram Booster)** | 0.6264 | 0.2527 | 17.92% | 0.3100 | 0.5156 | 0.1683 | **2.54s** |
-| 🥉 | **Logistic Regression (Scorecard)** | 0.6250 | 0.2500 | 17.96% | 0.3067 | 0.5168 | 0.1687 | **2.70s** |
-| 4 | **Random Forest (Bagging Ensemble)** | 0.6240 | 0.2480 | 17.51% | 0.3101 | 0.5167 | 0.1688 | **22.23s** |
-
-*Optimization note: Memory downcasting (`float32`) and histogram-binning algorithms enabled full training on 826k loans in **< 35s total** with peak RAM **< 250MB** (safe for Intel i3 / 8GB RAM).*
+| 🥇 | **XGBoost (Hist Tree Ensemble)** | **0.6899** | **0.3798** | **27.41%** | **0.3730** | **0.4954** | **0.1622** | **9.49s** |
+| 🥈 | **Random Forest (Bagging Ensemble)** | 0.6897 | 0.3793 | **27.74%** | 0.3732 | 0.4948 | 0.1615 | 26.97s |
+| 🥉 | **LightGBM (Histogram Booster)** | 0.6893 | 0.3785 | 27.43% | 0.3719 | 0.4966 | 0.1628 | **4.99s** |
+| 4 | **Logistic Regression (Scorecard Baseline)** | 0.6809 | 0.3618 | 26.30% | 0.3601 | 0.5071 | 0.1668 | **2.56s** |
 
 ---
 
-## 💰 Portfolio Financial Results & Risk Matrix
+## 💰 Portfolio Financial Results & Risk-Adjusted Net Profit Matrix
 
-* **Total Portfolio Balance (EAD):** **`$7,482,334,208.00`** ($7.48 Billion across 517,807 active loans)
-* **Total Baseline Expected Credit Loss:** **`$785,231,552.00`** (10.49% portfolio loss rate)
-* **Total Severe Scenario Loss:** **`$650,698,496.00`** (8.70% loss rate)
+* **Total Portfolio Exposure (EAD):** **`$7,499,413,504.00`** ($7.50 Billion across 518,706 active loans)
+* **Expected Annual Gross Revenue:** **`$1,041,159,076.60`** (13.88% Portfolio Gross Yield)
+* **Total Baseline Expected Credit Loss (ECL):** **`$937,681,856.00`** (12.50% Loss Rate)
+* **Total Baseline Net Profit:** **`$103,477,220.91`** (1.38% Net Margin)
+* **Total Severe Scenario Net Profit:** **`$347,085,371.84`** (4.63% Net Margin)
 
-### Expected Credit Loss Heatmap Matrix (FICO Tier vs. DTI Band in $ Millions):
+### Risk-Adjusted Net Profit Matrix (FICO Tier vs. DTI Band in $ Millions):
 
-| FICO Credit Tier | DTI: 0% - 10% | DTI: 10% - 20% | DTI: 20% - 30% | DTI: 30% - 40% | DTI: 40%+ | Total FICO Loss |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **< 660 (Subprime)** | $4.5M | $22.1M | $28.4M | $13.9M | $0.1M | **$69.0M** |
-| **660 - 699 (Fair)** | $28.2M | $137.4M | $161.8M | $74.5M | $0.9M | **$402.8M** |
-| **700 - 749 (Good)** | $19.4M | $89.2M | $96.5M | $41.8M | $0.4M | **$247.3M** |
-| **750 - 799 (Very Good)** | $6.8M | $30.1M | $29.8M | $11.6M | $0.1M | **$78.4M** |
-| **800+ (Exceptional)** | $2.3M | $8.7M | $7.6M | $2.8M | $0.0M | **$21.4M** |
+| FICO Credit Tier | DTI: 0% - 10% | DTI: 10% - 20% | DTI: 20% - 30% | DTI: 30% - 40% | DTI: 40%+ | Status & Verdict |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **660 - 699 (Fair)** | **+$19.6M** | **+$25.4M** | <span style="color:red">**-$13.7M**</span> | <span style="color:red">**-$13.9M**</span> | <span style="color:red">**-$1.1M**</span> | ⚠️ Halt DTI $\ge 20\%$ (Loss Bleed) |
+| **700 - 749 (Good)** | **+$16.5M** | **+$31.8M** | **+$10.8M** | <span style="color:red">**-$1.9M**</span> | **+$0.2M** | ⚠️ Halt DTI 30%–40% |
+| **750 - 799 (Very Good)** | **+$8.0M** | **+$10.8M** | **+$4.3M** | **+$0.7M** | **+$0.2M** | ✅ All Cohorts Profitable |
+| **800+ (Exceptional)** | **+$2.5M** | **+$2.2M** | **+$0.8M** | **+$0.2M** | **+$0.04M** | ✅ Prime Margin (>4% Net Yield) |
 
 ---
 
-## 🏛️ Executive Underwriting Policy Verdict
+## 🏛️ Official Risk Committee Decisioning Rule
 
-> ### 📢 Official Risk Committee Decision:
-> **"Halt originations for unsecured loans where DTI $\ge$ 20% and FICO < 700 to eliminate $\$276.4\text{ Million}$ in high-risk default exposure and protect portfolio capital adequacy."**
+> ### 📢 Risk Committee Underwriting Verdict:
+> **"Instead of halting originations blindly based on raw default rate, underwriting policy evaluates Risk-Adjusted Net Return ($\text{Revenue} - \text{ECL}$). Halt originations exclusively for segments generating negative net returns (specifically FICO 660–699 with DTI $\ge$ 20% and FICO 700–749 with DTI $\ge$ 30%) to eliminate $-\$30.6\text{ Million}$ in net losses, while preserving $\$45.0\text{ Million}$ in profitable originations from lower-DTI cohorts."**
 
 ---
 
@@ -100,92 +104,39 @@ cd credit-risk-stress-testing
 pip install -r requirements.txt
 ```
 
-### 2. Launching the Interactive Web Dashboard
-Run the Streamlit application:
+### 2. Launching the Interactive Streamlit Web App
+Launch the dashboard locally:
 ```bash
 streamlit run app.py
 ```
-Open your browser and navigate to: **`http://localhost:8502`** (or `http://localhost:8501`).
+Open your browser at `http://localhost:8501` (or `http://localhost:8502`).
+
+### 3. Navigating Dashboard Tabs:
+* **🏛️ The Deliverable: Portfolio Dashboard:** Slice scenario projections, toggle between **Risk-Adjusted Net Profit ($M)** and **Expected Credit Loss ($M)** on the interactive heatmap.
+* **🧭 End-to-End Workflow & Architecture:** Technical breakdown of all 5 project phases.
+* **🤖 4-Model ML Benchmark & Underwriter:** Inspect the leaderboard, head-to-head model deltas, and score single loan applicants in real time.
+* **📈 FRED Macroeconomic Deep-Dive:** Dual-axis historical analysis of `UNRATE` and `FEDFUNDS`.
+* **🛡️ Interactive Policy Simulator:** Test custom FICO and DTI underwriting thresholds.
+
+### 4. Standalone BI Exports ([`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/))
+To build custom reports in **Power BI**, **Tableau**, or **Looker Studio**:
+1. Open your BI software and select **Get Data $\rightarrow$ Text/CSV**.
+2. Connect to:
+   * `power_bi_exports/ecl_risk_matrix_fico_dti.csv` (Aggregated Net Profit & ECL Matrix)
+   * `power_bi_exports/ecl_summary_by_purpose.csv` (Purpose Breakdown)
+   * `power_bi_exports/stressed_portfolio_phase3.csv` (Loan-Level Stressed Portfolio)
 
 ---
 
-### 3. Navigating the Web Dashboard
+## 📚 Technical Documentation & Reports Hub
 
-| Dashboard Tab | What You Can Do |
-| :--- | :--- |
-| **🏛️ The Deliverable: Portfolio Dashboard** | • Filter by **Scenario** (*Baseline / Adverse / Severe*), **Vintage Year**, **Loan Purpose**, **FICO Tier**, and **DTI Band**.<br>• View live **KPI Metric Cards** ($ Exposure, ECL, Stress Gap, Average Model PD).<br>• Inspect the **FICO $\times$ DTI Heatmap Matrix** with cell-level loss numbers. |
-| **🧭 End-to-End Workflow & Architecture** | • Review the technical execution narrative, regulatory formulas, and methodologies across all 5 project phases. |
-| **🤖 4-Model ML Benchmark & Underwriter** | • **Tab 1 (Leaderboard):** Compare ROC-AUC, Gini, and KS separation power.<br>• **Tab 2 (Comparator):** Select any Model A vs. Model B to see side-by-side metric deltas.<br>• **Tab 3 (Live Underwriter):** Move applicant sliders (FICO, DTI, Purpose, Principal, Unemployment, Fed Rate) to execute **real-time concurrent inference across all 4 models**! |
-| **📈 FRED Macroeconomic Deep-Dive** | • Explore dual-axis interactive time-series plots comparing Unemployment (`UNRATE`) and Interest Rates (`FEDFUNDS`). |
-| **🛡️ Interactive Policy Cutoff Simulator** | • Adjust FICO and DTI cutoff sliders to simulate underwriting rules and calculate exact dollar loss savings. |
-
----
-
-### 4. Using the Standalone BI Exports (Power BI / Tableau)
-To build custom dashboards in **Power BI**, **Tableau**, or **Looker Studio**, import the pre-aggregated and clean CSV files located in [`power_bi_exports/`](file:///J:/Finance%20Projects/Credit/power_bi_exports/):
-* 📊 **`power_bi_exports/ecl_risk_matrix_fico_dti.csv`:** Pre-grouped matrix table for building FICO $\times$ DTI heatmaps.
-* 📊 **`power_bi_exports/ecl_summary_by_purpose.csv`:** Loan volume, default rate, and ECL summaries by loan purpose.
-* 📊 **`power_bi_exports/stressed_portfolio_phase3.csv`:** Complete 517k loan records with baseline, adverse, and severe default probabilities and losses.
+Comprehensive documentation is organized in the [`reports/`](file:///J:/Finance%20Projects/Credit/reports/) folder:
+* 📄 **[`reports/Executive_Business_Summary_and_Glossary.md`](file:///J:/Finance%20Projects/Credit/reports/Executive_Business_Summary_and_Glossary.md)**: Full project narrative, mathematical equations, and credit risk terminology glossary.
+* 📄 **[`reports/Phase1_Data_Engineering_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase1_Data_Engineering_Report.md)**: DuckDB ingestion, behavioral credit variable cleaning, and macro alignment.
+* 📄 **[`reports/Phase2_Model_Evaluation_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase2_Model_Evaluation_Report.md)**: 4-model champion-challenger benchmark and OOT validation.
+* 📄 **[`reports/Phase3_Stress_Testing_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase3_Stress_Testing_Report.md)**: Baseline, Adverse, and Severe stress testing specifications.
+* 📄 **[`reports/Phase4_Financial_Math_Report.md`](file:///J:/Finance%20Projects/Credit/reports/Phase4_Financial_Math_Report.md)**: Expected revenue, Expected Credit Loss, and Risk-Adjusted Net Profit formulations.
+* 📄 **[`reports/Phase5_Power_BI_Deliverable_Guide.md`](file:///J:/Finance%20Projects/Credit/reports/Phase5_Power_BI_Deliverable_Guide.md)**: Power BI/Tableau schema guide.
 
 ---
-
-### 5. Running the Offline Pipeline Scripts (Optional)
-If you want to re-execute any individual phase pipeline from scratch:
-```bash
-# Phase 1: Ingestion & FRED Macro Integration
-python python_scripts/phase1_data_engineering.py
-
-# Phase 2: Train & Benchmark 4 ML Models
-python python_scripts/phase2_model_engine.py
-
-# Phase 3: Macro Stress Testing Simulation
-python python_scripts/phase3_stress_testing.py
-
-# Phase 4: Financial Math & DuckDB SQL Loss Calculation
-python python_scripts/phase4_financial_math_sql.py
-
-# Export Power BI CSV Deliverables
-python python_scripts/export_power_bi_files.py
-```
-
----
-
-## 📁 Repository Directory Structure
-
-```
-J:/Finance Projects/Credit/
-├── .gitignore                          # 🛡️ Git Ignore Rules (ignores raw 1.6GB CSV)
-├── README.md                           # 📄 Main Project Documentation
-├── app.py                              # 🚀 Live Streamlit & Plotly Dashboard
-├── requirements.txt                    # 📦 Python Dependencies
-├── 02_phase2_model_engine.ipynb        # 📓 Phase 2 ML Benchmarking Notebook
-├── 03_phase3_stress_testing.ipynb      # 📓 Phase 3 Macro Stress Testing Notebook
-├── reports/                            # 📁 Centralized Reports & Glossary Hub
-│   ├── Executive_Business_Summary_and_Glossary.md
-│   ├── Phase1_Data_Engineering_Report.md
-│   ├── Phase2_Model_Evaluation_Report.md
-│   ├── Phase3_Stress_Testing_Report.md
-│   ├── Phase4_Financial_Math_Report.md
-│   └── Phase5_Power_BI_Deliverable_Guide.md
-├── power_bi_exports/                   # 📁 Standalone BI Data Exports (Power BI / Tableau)
-│   ├── ecl_risk_matrix_fico_dti.csv
-│   ├── ecl_summary_by_purpose.csv
-│   └── stressed_portfolio_phase3.csv
-├── data/                               # 📁 Parquet Datasets & FRED Series (< 20MB)
-├── models/                             # 📁 Serialized Trained Model Pipelines
-├── python_scripts/                     # 📁 Modular Phase Execution Scripts
-└── sql_scripts/                        # 📁 DuckDB SQL Financial Loss Queries
-```
-
----
-
-## 📖 Key Credit Risk Glossary
-
-* **Probability of Default ($\text{PD}$):** Percentage likelihood that a borrower defaults on their loan obligations.
-* **Loss Given Default ($\text{LGD}$):** Unrecovered loss percentage if a borrower defaults ($\text{LGD} = 50.0\%$).
-* **Exposure at Default ($\text{EAD}$):** Outstanding loan principal amount at default ($\text{EAD} = \text{loan\_amnt}$).
-* **Expected Credit Loss ($\text{ECL}$):** Expected dollar loss: $\text{ECL} = \text{PD} \times \text{LGD} \times \text{EAD}$.
-* **Incremental Stress Gap:** Additional loss under recession: $\text{ECL Gap} = \text{ECL}_{\text{Severe}} - \text{ECL}_{\text{Base}}$.
-* **Point-in-Time ($\text{PiT}$):** Model incorporating real-time macroeconomic indicators for forward-looking stress testing.
-* **Gini Coefficient:** Scorecard discriminatory power metric: $\text{Gini} = 2 \times \text{AUC} - 1$.
-* **Kolmogorov-Smirnov ($\text{KS}$):** Maximum separation between default and non-default borrower distributions.
+*Built with Python, DuckDB, XGBoost, Scikit-Learn, and Streamlit.*

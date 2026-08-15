@@ -67,7 +67,18 @@ def run_phase2_pipeline(
     train_mask = df['Year_Month'] < '2016-01'
     test_mask = df['Year_Month'] >= '2016-01'
 
-    features = ['fico_range_low', 'dti', 'purpose', 'UNRATE', 'FEDFUNDS']
+    features = [
+        'fico_range_low', 
+        'dti', 
+        'annual_inc', 
+        'int_rate', 
+        'revol_util', 
+        'delinq_2yrs', 
+        'inq_last_6mths', 
+        'purpose', 
+        'UNRATE', 
+        'FEDFUNDS'
+    ]
     target_col = 'target'
 
     X_train = df.loc[train_mask, features].copy()
@@ -81,7 +92,7 @@ def run_phase2_pipeline(
 
     # 3. Preprocessing Pipeline
     print("\n[Step 3] Fitting Preprocessor (StandardScaler + OneHotEncoder)...")
-    num_cols = ['fico_range_low', 'dti', 'UNRATE', 'FEDFUNDS']
+    num_cols = ['fico_range_low', 'dti', 'annual_inc', 'int_rate', 'revol_util', 'delinq_2yrs', 'inq_last_6mths', 'UNRATE', 'FEDFUNDS']
     cat_cols = ['purpose']
 
     preprocessor = ColumnTransformer(
