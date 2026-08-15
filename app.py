@@ -240,7 +240,7 @@ with st.sidebar:
     st.markdown(f"• **Active Loans:** `{len(df_loans):,}`<br>• **Gross Balance:** `${df_loans['loan_amnt'].sum()/1e9:.2f}B`<br>• **Annual Revenue:** `${df_loans['expected_revenue'].sum()/1e9:.2f}B`<br>• **Base ECL Reserve:** `${df_loans['ecl_base'].sum()/1e6:.1f}M`<br>• **Base Net Profit:** `${df_loans['net_profit_base'].sum()/1e6:.1f}M`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🤖 Trained Model Suite")
-    st.markdown("• 🥇 **XGBoost (Hist):** `AUC 0.690 \| KS 27.4%`<br>• 🥈 **Random Forest:** `AUC 0.690 \| KS 27.7%`<br>• 🥉 **LightGBM:** `AUC 0.689 \| KS 27.4%`<br>• 📋 **Logistic Reg:** `AUC 0.681 \| KS 26.3%`", unsafe_allow_html=True)
+    st.markdown("• 🥇 **XGBoost (Hist):** `AUC 0.690 | KS 27.4%`<br>• 🥈 **Random Forest:** `AUC 0.690 | KS 27.7%`<br>• 🥉 **LightGBM:** `AUC 0.689 | KS 27.4%`<br>• 📋 **Logistic Reg:** `AUC 0.681 | KS 26.3%`", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 🏛️ Standards Compliance")
     st.markdown("• **Risk-Adjusted Return:** Net Profit Optimization<br>• **IFRS 9 / CECL:** Forward-looking ECL<br>• **Basel III/IV:** Capital Adequacy", unsafe_allow_html=True)
@@ -383,7 +383,7 @@ with tab_dash:
                 height=380,
                 margin=dict(l=30, r=30, t=50, b=30)
             )
-            st.plotly_chart(fig_heat, use_container_width=True)
+            st.plotly_chart(fig_heat, width="stretch")
 
         with row1_col2:
             purp_summary = purp_summary_cached.copy()
@@ -408,7 +408,7 @@ with tab_dash:
                 height=380,
                 margin=dict(l=30, r=40, t=50, b=30)
             )
-            st.plotly_chart(fig_purp, use_container_width=True)
+            st.plotly_chart(fig_purp, width="stretch")
 
         # Row 2: Donut + Vintage Trend
         row2_col1, row2_col2 = st.columns(2)
@@ -429,7 +429,7 @@ with tab_dash:
                 height=320,
                 margin=dict(l=20, r=20, t=50, b=20)
             )
-            st.plotly_chart(fig_donut, use_container_width=True)
+            st.plotly_chart(fig_donut, width="stretch")
 
         with row2_col2:
             vintage_trend = filtered_df.groupby('vintage_year', observed=False).agg({
@@ -449,7 +449,7 @@ with tab_dash:
                 height=320,
                 margin=dict(l=30, r=30, t=50, b=30)
             )
-            st.plotly_chart(fig_trend, use_container_width=True)
+            st.plotly_chart(fig_trend, width="stretch")
 
         # Risk Committee Decisioning Box (Risk-Adjusted Return Framework)
         neg_segments = filtered_df[filtered_df['net_profit_base'] < 0]
@@ -518,7 +518,7 @@ with tab_ml:
             {"Rank": "🥉 3", "Model Architecture": "LightGBM (Histogram Booster)", "ROC-AUC": 0.6893, "Gini Coeff": 0.3785, "KS Stat (%)": "27.43%", "PR-AUC": 0.3719, "Log-Loss": 0.4966, "Brier Score": 0.1628, "Train Latency": "4.99s"},
             {"Rank": "4", "Model Architecture": "Logistic Regression (Scorecard)", "ROC-AUC": 0.6809, "Gini Coeff": 0.3618, "KS Stat (%)": "26.30%", "PR-AUC": 0.3601, "Log-Loss": 0.5071, "Brier Score": 0.1668, "Train Latency": "2.56s"}
         ])
-        st.dataframe(leaderboard_df, use_container_width=True, hide_index=True)
+        st.dataframe(leaderboard_df, width="stretch", hide_index=True)
 
         row_c1, row_c2 = st.columns(2)
         with row_c1:
@@ -530,14 +530,14 @@ with tab_ml:
             fig_roc.add_trace(go.Scatter(x=fpr_pts, y=fpr_pts**0.575, mode='lines', name="Logistic Reg (AUC = 0.6809)", line=dict(color='#F59E0B', width=2)))
             fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode='lines', name="Random Chance (0.50)", line=dict(color='#94A3B8', dash='dash')))
             fig_roc.update_layout(title="<b>Out-of-Time ROC Curves (Enriched 10 Features)</b>", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate", template="plotly_white", height=340)
-            st.plotly_chart(fig_roc, use_container_width=True)
+            st.plotly_chart(fig_roc, width="stretch")
 
         with row_c2:
             feat_names = ["Fed Funds Rate", "Unemployment Rate", "Delinquencies 2Y", "Inquiries 6M", "Annual Income", "Debt-to-Income (DTI)", "Revolving Util %", "FICO Score", "Interest Rate %"]
             feat_vals = [2.1, 3.4, 4.8, 6.2, 8.5, 11.4, 15.6, 21.2, 26.8]
             fig_feat = go.Figure(go.Bar(x=feat_vals, y=feat_names, orientation='h', marker=dict(color=feat_vals, colorscale='Blues', showscale=False), text=[f"{v:.1f}%" for v in feat_vals], textposition='outside'))
             fig_feat.update_layout(title="<b>Predictor Relative Importance in Champion XGBoost</b>", xaxis_title="Contribution (%)", template="plotly_white", height=340)
-            st.plotly_chart(fig_feat, use_container_width=True)
+            st.plotly_chart(fig_feat, width="stretch")
 
     with bench_subtab2:
         st.markdown("#### Head-to-Head Architecture Comparison")
@@ -573,7 +573,7 @@ with tab_ml:
         fig_comp.add_trace(go.Bar(x=metrics_compare, y=m1_vals, name=m1_name, marker_color='#94A3B8', text=[f"{v:.4f}" for v in m1_vals], textposition='outside'))
         fig_comp.add_trace(go.Bar(x=metrics_compare, y=m2_vals, name=m2_name, marker_color='#2563EB', text=[f"{v:.4f}" for v in m2_vals], textposition='outside'))
         fig_comp.update_layout(title=f"<b>Direct Metric Comparison: {m1_name} vs. {m2_name}</b>", barmode='group', template="plotly_white", height=380)
-        st.plotly_chart(fig_comp, use_container_width=True)
+        st.plotly_chart(fig_comp, width="stretch")
 
     with bench_subtab3:
         st.markdown("#### Live What-If Single-Loan Multi-Model Underwriter")
@@ -669,7 +669,7 @@ with tab_macro:
         template="plotly_white",
         height=450
     )
-    st.plotly_chart(fig_macro, use_container_width=True)
+    st.plotly_chart(fig_macro, width="stretch")
 
 # ====================================================
 # TAB 5: POLICY CUTOFF SIMULATOR
