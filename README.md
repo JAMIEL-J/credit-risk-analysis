@@ -134,6 +134,25 @@ To build custom reports in **Power BI**, **Tableau**, or **Looker Studio**:
 
 ---
 
+## 🔮 Future Enhancements & Strategic Roadmap
+
+* 📈 **1. Multi-Stage Dynamic LGD & EAD Modeling:**
+  * **Objective:** Replace static regulatory assumptions ($\text{LGD} = 50.0\%$) with econometric **Beta Regression / Fractional Response Models** to predict loan-level recovery rates conditional on collateral type and economic cycles, alongside **Credit Conversion Factor (CCF)** models for revolving lines.
+
+* ⏳ **2. Lifetime Multi-Horizon Default Timing (Survival Analysis):**
+  * **Objective:** Incorporate **Cox Proportional Hazards / DeepSurv** architectures to model monthly marginal default probabilities ($t = 1, \dots, 60\text{ months}$) for full compliance with **IFRS 9 Stage 2** lifetime ECL discounting requirements.
+
+* 🛡️ **3. Automated Model Governance & Drift Alerting (SR 11-7 / Fed Compliance):**
+  * **Objective:** Implement real-time **Population Stability Index (PSI)** and **Characteristic Stability Index (CSI)** pipelines that automatically trigger Slack/email alerts and retraining workflows when incoming borrower distributions drift ($\text{PSI} \ge 0.25$).
+
+* 🌐 **4. Automated FRED Macro Ingestion & Live CCAR Scenario Webhooks:**
+  * **Objective:** Establish continuous monthly API pipelines syncing directly with the **St. Louis Federal Reserve API (`fredapi`)** and Federal Reserve CCAR supervisory scenario publications, enabling fully hands-off portfolio re-stressing.
+
+* 💳 **5. Alternative Data & Open Banking Cash-Flow Feature Store:**
+  * **Objective:** Integrate real-time bank transaction analytics (income volatility, recurring subscription load, cash-flow velocity) via Open Banking APIs to boost predictive discrimination on thin-file and near-prime applicants.
+
+---
+
 ## 📚 Technical Documentation & Reports Hub
 
 Comprehensive documentation is organized in the [`reports/`](file:///J:/Finance%20Projects/Credit/reports/) folder:
