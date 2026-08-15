@@ -134,22 +134,57 @@ To build custom reports in **Power BI**, **Tableau**, or **Looker Studio**:
 
 ---
 
-## 🔮 Future Enhancements & Strategic Roadmap
+---
 
-* 📈 **1. Multi-Stage Dynamic LGD & EAD Modeling:**
-  * **Objective:** Replace static regulatory assumptions ($\text{LGD} = 50.0\%$) with econometric **Beta Regression / Fractional Response Models** to predict loan-level recovery rates conditional on collateral type and economic cycles, alongside **Credit Conversion Factor (CCF)** models for revolving lines.
+## 🔮 Future Enhancements & MLOps Production Roadmap
 
-* ⏳ **2. Lifetime Multi-Horizon Default Timing (Survival Analysis):**
-  * **Objective:** Incorporate **Cox Proportional Hazards / DeepSurv** architectures to model monthly marginal default probabilities ($t = 1, \dots, 60\text{ months}$) for full compliance with **IFRS 9 Stage 2** lifetime ECL discounting requirements.
+To scale this analytical engine into an automated, enterprise-grade banking production system, the planned **MLOps & CI/CD Architecture** includes:
 
-* 🛡️ **3. Automated Model Governance & Drift Alerting (SR 11-7 / Fed Compliance):**
-  * **Objective:** Implement real-time **Population Stability Index (PSI)** and **Characteristic Stability Index (CSI)** pipelines that automatically trigger Slack/email alerts and retraining workflows when incoming borrower distributions drift ($\text{PSI} \ge 0.25$).
+```mermaid
+flowchart TD
+    subgraph CI["1. Continuous Integration (CI)"]
+        A["Git Push / PR"] --> B["Linting & Style (Ruff / Black)"]
+        B --> C["Data Contract Validation (Great Expectations)"]
+        C --> D["Financial Math Unit Tests (pytest)"]
+    end
 
-* 🌐 **4. Automated FRED Macro Ingestion & Live CCAR Scenario Webhooks:**
-  * **Objective:** Establish continuous monthly API pipelines syncing directly with the **St. Louis Federal Reserve API (`fredapi`)** and Federal Reserve CCAR supervisory scenario publications, enabling fully hands-off portfolio re-stressing.
+    subgraph CD["2. Continuous Delivery (CD) & Registry"]
+        D --> E["Model Registry & Lineage (MLflow / DVC)"]
+        E --> F["Docker Containerization (< 180MB RAM)"]
+        F --> G["Staging & Shadow Mode Deployment"]
+    end
 
-* 💳 **5. Alternative Data & Open Banking Cash-Flow Feature Store:**
-  * **Objective:** Integrate real-time bank transaction analytics (income volatility, recurring subscription load, cash-flow velocity) via Open Banking APIs to boost predictive discrimination on thin-file and near-prime applicants.
+    subgraph CM["3. Continuous Monitoring (SR 11-7)"]
+        G --> H["Data Drift Alerts (PSI / CSI Monitoring)"]
+        G --> I["Rolling Model Decay (AUC / Brier Score)"]
+        G --> J["Automated FRED Macro Webhooks"]
+    end
+
+    subgraph CT["4. Continuous Training (CT)"]
+        H & I -->|PSI >= 0.25 or KS Drop > 5%| K["Automated Retraining Pipeline"]
+        K -->|Challenger Beats Champion| E
+    end
+```
+
+### 🛠️ MLOps Implementation Pillars:
+
+* 🔄 **1. Automated CI/CD Testing Pipeline (GitHub Actions):**
+  * **Objective:** Automatically validate all code commits with **`pytest`** unit tests verifying financial math formulas ($\text{ECL} = \text{PD} \times \text{LGD} \times \text{EAD}$ and $\text{Net Profit} = \text{Revenue} - \text{ECL}$), schema assertions via **Great Expectations**, and sub-second model inference checks.
+
+* 📦 **2. Centralized Model Registry & Artifact Versioning (MLflow / DVC):**
+  * **Objective:** Track and version all serialized candidate models with full lineage metadata (training dataset hashes, Git commit SHAs, Out-of-Time ROC-AUC, KS statistics, and Brier calibration scores) for complete regulatory auditability.
+
+* 🐳 **3. Lightweight Containerized Deployment (Docker & Multi-Stage Builds):**
+  * **Objective:** Package the Streamlit interface, DuckDB SQL engine, and Scikit-Learn pipelines into lightweight, isolated Docker containers optimized for low memory footprints ($< 180\text{MB}$ RAM) and seamless cloud deployment (AWS ECS, GCP Cloud Run, or Azure App Service).
+
+* 📊 **4. Real-Time Model Governance & Drift Monitoring (SR 11-7 / Fed Standards):**
+  * **Objective:** Implement automated **Population Stability Index (PSI)** and **Characteristic Stability Index (CSI)** trackers on incoming monthly applicant batches. Alert credit risk teams when demographic drift exceeds regulatory thresholds ($\text{PSI} \ge 0.25$).
+
+* 🔁 **5. Automated Continuous Training (CT) & Shadow Deployment:**
+  * **Objective:** Establish event-driven retraining pipelines triggered by drift alerts or scheduled quarterly vintage maturation, running Challenger models in **Shadow Mode** against the Champion XGBoost before automated gated promotion.
+
+* 🌐 **6. Dynamic Federal Reserve API Ingestion (`fredapi`):**
+  * **Objective:** Connect automated monthly webhooks directly to the St. Louis Fed API (`fredapi`) to ingest updated `UNRATE` and `FEDFUNDS` figures and auto-refresh supervisory stress scenarios.
 
 ---
 
