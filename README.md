@@ -1,4 +1,4 @@
-# 🏛️ Credit Portfolio Macroeconomic Stress Testing & Risk-Adjusted Net Return Engine
+# 🏛️ Credit Portfolio Macroeconomic Stress Testing Engine
 > **Point-in-Time (PiT) Machine Learning (AUC ~0.70), Risk-Adjusted Return Optimization, and Dynamic ECL Stress Testing under CECL / IFRS 9 Guidelines**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)

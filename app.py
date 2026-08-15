@@ -18,7 +18,7 @@ import plotly.graph_objects as go
 # 1. PAGE CONFIGURATION & ENTERPRISE STYLING
 # ----------------------------------------------------
 st.set_page_config(
-    page_title="Credit Portfolio Stress Testing & Risk-Adjusted ECL Engine",
+    page_title="Credit Portfolio Macroeconomic Stress Testing Engine",
     page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -222,7 +222,7 @@ st.markdown("""
     <div style='display: flex; justify-content: space-between; align-items: center;'>
         <div>
             <div style='font-size: 1.35rem; font-weight: 700; color: #FFFFFF; letter-spacing: -0.02em;'>
-                🏛️ Credit Portfolio Stress Testing & Risk-Adjusted Net Profit Engine
+                🏛️ Credit Portfolio Macroeconomic Stress Testing Engine
             </div>
             <div style='font-size: 0.82rem; color: #94A3B8; margin-top: 0.2rem;'>
                 Point-in-Time (PiT) ML (AUC ~0.70), Risk-Adjusted Return Optimization & CECL / IFRS 9 Compliance
