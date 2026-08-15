@@ -10,7 +10,7 @@
 
 ---
 
-## 🎯 Key Accomplishments (Google XYZ Framework)
+## 🎯 Key Accomplishments
 
 * 🚀 **Big Data Ingestion & Feature Integration:**
   > **Accomplished** end-to-end data pipeline integration of **1,345,310 completed loan records** with 234 months of Federal Reserve macroeconomic data, **as measured by** **100.00% sample retention** and **< 3.0s query execution times**, **by doing** out-of-core columnar extraction and temporal alignment in **DuckDB**.
