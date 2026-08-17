@@ -74,21 +74,49 @@ Evaluated on a 518,706 Out-of-Time test cohort (2016-2018 vintages):
 
 **Risk Committee Output:** Halt originations exclusively for segments generating negative net returns to eliminate $30.8M in net losses, while preserving $55.7M in profitable originations from lower-DTI cohorts.
 
+## Model Lineage, Data Governance & Auditability
+
+| Attribute | Specification / Version Reference |
+| :--- | :--- |
+| **Data Universe** | LendingClub Closed Loans (2007-06 to 2018-12) via FRED Macro Series |
+| **Total Cohort Count** | 1,345,310 loans (100% sample retention) |
+| **Chronological Cutoff** | Train: 2007-06 to 2015-12 (826,604 loans) \| OOT Test: 2016-01 to 2018-12 (518,706 loans) |
+| **Champion Model** | LightGBM Classifier (`models/champion_pd_model.joblib`) |
+| **Challenger Suite** | XGBoost (Hist), Random Forest, Logistic Regression (`models/all_models.joblib`) |
+| **Regulatory Framework** | CECL / IFRS 9 Point-in-Time Lifetime Loss Formulation |
+| **Environment** | Python 3.10+, DuckDB 1.1+, Scikit-Learn 1.3+, LightGBM 4.1+, XGBoost 2.0+ |
+
+## Evidence Hierarchy & Artifact Lineage
+
+To ensure audit traceability across credit committee reviews and downstream modeling:
+1. **Primary Ground-Truth Datasets:**
+   - Preprocessed Loan Base: `data/cleaned_loans_phase1.parquet`
+   - Stressed Scenario Cohort: `data/stressed_portfolio_phase3.parquet`
+   - Loan-Level Financial ECL: `data/loan_level_ecl_results.parquet`
+2. **Aggregated Decision Matrices & BI Feeds:**
+   - Underwriting Cutoff Grid: `power_bi_exports/ecl_risk_matrix_fico_dti.csv`
+   - Portfolio Overview & Macro Shifts: `power_bi_exports/portfolio_kpis_overview.csv`, `power_bi_exports/macro_stress_comparison.csv`
+3. **Technical Governance Reports:**
+   - Data Engineering: [Phase 1 Report](file:///J:/Finance%20Projects/Credit/reports/Phase1_Data_Engineering_Report.md)
+   - ML Benchmark: [Phase 2 Report](file:///J:/Finance%20Projects/Credit/reports/Phase2_Model_Evaluation_Report.md)
+   - Stress Testing: [Phase 3 Report](file:///J:/Finance%20Projects/Credit/reports/Phase3_Stress_Testing_Report.md)
+   - Financial Math: [Phase 4 Report](file:///J:/Finance%20Projects/Credit/reports/Phase4_Financial_Math_Report.md)
+   - BI Specification: [Phase 5 Guide](file:///J:/Finance%20Projects/Credit/reports/Phase5_Power_BI_Deliverable_Guide.md)
+4. **Executive Synthesis:**
+   - [Executive Business Summary & Glossary](file:///J:/Finance%20Projects/Credit/reports/Executive_Business_Summary_and_Glossary.md)
+
 ## Usage
 
 **1. Environment Setup**
 ```bash
-git clone [https://github.com/JAMIEL-J/credit-risk-analysis.git](https://github.com/JAMIEL-J/credit-risk-analysis.git)
+git clone https://github.com/JAMIEL-J/credit-risk-analysis.git
 cd credit-risk-analysis
 pip install -r requirements.txt
-
 ```
 
 **2. Launch Dashboard**
-
 ```bash
 streamlit run app.py
-
 ```
 
 **3. BI Integration**
@@ -98,13 +126,9 @@ Pre-aggregated cuts are generated in `power_bi_exports/`. Connect Power BI/Table
 
 Transitioning this engine to an enterprise-grade system involves:
 
-1. **CI/CD Pipeline (GitHub Actions):** Unit testing for financial math (ECL = PD * LGD * EAD) and schema assertions via Great Expectations.
+1. **CI/CD Pipeline (GitHub Actions):** Unit testing for financial math ($\text{ECL} = \text{PD} \times \text{LGD} \times \text{EAD}$) and schema assertions via Great Expectations.
 2. **Model Registry (MLflow/DVC):** Tracking serialized candidate models with full lineage metadata (dataset hashes, ROC-AUC, Brier scores) for regulatory auditability.
 3. **Containerization (Docker):** Packaging the SQL engine and Scikit-Learn pipelines into isolated containers optimized for cloud deployment.
-4. **Drift Monitoring (SR 11-7):** Automated Population Stability Index (PSI) trackers on incoming applicant batches, triggering alerts when PSI >= 0.25.
+4. **Drift Monitoring (SR 11-7):** Automated Population Stability Index (PSI) trackers on incoming applicant batches, triggering alerts when $\text{PSI} \ge 0.25$.
 5. **Continuous Training:** Event-driven retraining pipelines running Challenger models in Shadow Mode before gated promotion.
-6. **Dynamic Data Ingestion:** Automated monthly webhooks directly to the `fredapi` to refresh `UNRATE` and `FEDFUNDS` scenarios.
-
-```
-
-```
+6. **Dynamic Data Ingestion:** Automated monthly webhooks directly to the `fredapi` to refresh `UNRATE` and `FEDFUNDS` scenarios.

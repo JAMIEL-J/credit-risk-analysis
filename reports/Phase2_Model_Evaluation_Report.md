@@ -24,16 +24,16 @@
 
 1. **Logistic Regression (Scorecard Baseline):** Regulatory baseline standard in credit scoring. Measures linear log-odds contribution of FICO, DTI, and macro factors.
 2. **Random Forest (Bagging Ensemble):** 100 decorrelated decision trees using bootstrap aggregation with feature subsampling to mitigate overfitting.
-3. **LightGBM (Histogram Gradient Boosting):** Leaf-wise tree splitting algorithm delivering rapid training and sharp score calibration.
-4. **XGBoost (Histogram Depth-Wise Ensemble):** Exact second-order gradient boosting with depth constraints, chosen as champion for stress scenario sensitivity.
+3. **LightGBM (Histogram Gradient Boosting):** Leaf-wise tree splitting algorithm delivering rapid training, sharp score calibration, and highest out-of-time discriminatory power (Champion).
+4. **XGBoost (Histogram Depth-Wise Ensemble):** Exact second-order gradient boosting with depth constraints, serving as close challenger.
 
 ---
 
 ## 3. Key Findings & Metric Interpretation
 
-* **Cross-Model Consistency:** All non-linear models (XGBoost, LightGBM, Random Forest) achieve higher discriminatory power and lower Log-Loss than the linear scorecard baseline.
-* **Separation Power (KS Statistic):** The top tree models achieve **~18.0% KS separation** across the out-of-time test cohort.
-* **Computational Efficiency:** All 4 models trained on **826,594 records** in under **35 seconds total** with peak RAM under **250 MB**, perfectly suited for an Intel i3 + 8GB RAM configuration.
+* **Cross-Model Consistency:** All non-linear models (LightGBM, XGBoost, Random Forest) achieve higher discriminatory power and lower Log-Loss than the linear scorecard baseline.
+* **Separation Power (KS Statistic):** The top tree models achieve **27.80%–27.90% KS separation** across the out-of-time test cohort.
+* **Computational Efficiency:** All 4 models trained on **826,604 records** in under **55 seconds total** with peak RAM under **250 MB**, perfectly suited for an Intel i3 + 8GB RAM configuration.
 
 ---
 

@@ -27,23 +27,25 @@ flowchart LR
 ### Step-by-Step Solution Breakdown:
 
 1. **Phase 1: Ingestion & Macroeconomic Synchronization:**
-   * Ingested **1,344,401** resolved LendingClub loans and synchronized monthly Federal Reserve macroeconomic indicators (**Unemployment Rate `UNRATE`** and **Federal Funds Rate `FEDFUNDS`**) via chronological `Year_Month` join keys.
+   * Ingested **1,345,310** resolved LendingClub loans and synchronized monthly Federal Reserve macroeconomic indicators (**Unemployment Rate `UNRATE`** and **Federal Funds Rate `FEDFUNDS`**) via chronological `Year_Month` join keys.
 2. **Phase 2: Point-in-Time (PiT) Machine Learning Engine:**
-   * Trained a **4-Model Champion-Challenger Suite** (Logistic Regression, Random Forest, LightGBM, XGBoost) using **Temporal Out-of-Time (OOT)** validation (Train: 2007–2015, Test: 2016–2018) to eliminate lookahead bias.
-   * **Champion Model:** **XGBoost (Hist Tree)** achieved the highest separation ($\text{AUC} = 0.6265, \text{KS} = 18.03\%$).
+   * Trained a **4-Model Champion-Challenger Suite** (Logistic Regression, Random Forest, LightGBM, XGBoost) using **Temporal Out-of-Time (OOT)** validation (Train: 2007–2015 [826,604 loans], Test: 2016–2018 [518,706 loans]) to eliminate lookahead bias.
+   * **Champion Model:** **LightGBM (Histogram Booster)** achieved superior performance ($\text{ROC-AUC} = 0.6919, \text{Gini} = 0.3839, \text{KS} = 27.90\%, \text{PR-AUC} = 0.3756, \text{Log-Loss} = 0.4959, \text{Brier} = 0.1623$).
+   * **Challenger Model:** **XGBoost (Hist Tree)** achieved comparable separation ($\text{ROC-AUC} = 0.6917, \text{Gini} = 0.3833, \text{KS} = 27.80\%$).
 3. **Phase 3: Macroeconomic Stress Testing Engine:**
-   * Subjected **517,807 active test portfolio loans** ($\$7.48\text{B}$ exposure) to 3 supervisory scenarios:
-     * **Baseline:** Current prevailing macro rates.
-     * **Adverse (+1.5% Unemployment, +0.5% Fed Rate):** Mild recession shock.
-     * **Severe (+3.5% Unemployment, +1.5% Fed Rate):** Deep stagflationary recession shock.
+   * Subjected **518,706 active test portfolio loans** ($\$7.499\text{B}$ total exposure) to 3 supervisory scenarios:
+     * **Baseline:** Current prevailing macro rates (Mean $\text{PD} = 23.18\%$).
+     * **Adverse (+1.5% Unemployment, +0.5% Fed Rate):** Mild recession shock (Mean $\text{PD} = 23.53\%$).
+     * **Severe (+3.5% Unemployment, +1.5% Fed Rate):** Deep stagflationary recession shock (Mean $\text{PD} = 24.14\%$).
 4. **Phase 4: Financial Math & SQL Expected Credit Loss (ECL):**
-   * Implemented regulatory accounting math: $\text{ECL} = \text{PD} \times \text{LGD} \times \text{EAD}$.
-   * Quantified total expected portfolio loss: **$\$785.2\text{M}$ Baseline ECL** (10.49% loss rate).
-   * Segmented loans into a **FICO $\times$ DTI Risk Concentration Matrix**.
+   * Implemented regulatory accounting math: $\text{ECL} = \text{PD} \times \text{LGD (0.50)} \times \text{EAD}$, $\text{Gross Revenue} = \text{EAD} \times \text{Interest Rate}$, and $\text{Net Profit} = \text{Gross Revenue} - \text{ECL}$.
+   * Quantified total expected portfolio loss: **$\$909.05\text{M}$ Baseline ECL** (12.12% loss rate) yielding **$\$132.11\text{M}$ Baseline Net Profit** (1.76% net margin).
+   * Quantified **$\$941.83\text{M}$ Severe Scenario ECL** (12.56% loss rate), creating a **$\$32.78\text{M}$ severe loss expansion**.
+   * Segmented loans into a **FICO $\times$ DTI Risk & Net Return Matrix**.
 5. **Phase 5: The Deliverable & Underwriting Risk Policy:**
    * Built an interactive **Streamlit & Power BI Executive Dashboard** with dynamic multi-dimensional slicers.
    * **Actionable Verdict for Risk Committee:**
-     > *"Halt originations for unsecured loans where $\text{DTI} \ge 20\%$ and $\text{FICO} < 700$ to eliminate $\approx \$276.4\text{ Million}$ in high-risk default exposure and protect portfolio capital adequacy."*
+     > *"Instead of naive loss-based cutoffs, enforce Risk-Adjusted Underwriting: Halt originations for segments generating negative net returns ($\text{FICO } 660\text{--}699 \text{ with } \text{DTI} \ge 20\%$, and $\text{FICO } 700\text{--}749 \text{ with } \text{DTI} \ge 30\%$). This eliminates $\$30.8\text{M}$ in net losses while preserving $\$55.7\text{M}$ in profitable originations from lower-DTI cohorts."*
 
 ---
 
